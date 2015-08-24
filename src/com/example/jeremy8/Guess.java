@@ -35,15 +35,15 @@ public class Guess extends Activity {
 	private Bitmap baseBitmap;
 	private Canvas canvas;
 	private Paint paint;
-	public int coordinates[];  // <--------------- 接收資料存放處
-	private int[] MyPalette;
+	private int[] MyPalette;  // <--------------- 接收資料存放處
 	private int MyPosition;
 	private int[] senderPalette;
 	private int senderPosition;
 	
 	String file = MAXpre.getString("roomname", "unknown");  // <------ 房間名稱+self
 	String FILENAME = file+".json";
-	ArrayList<Integer> gameArray;
+	ArrayList<Integer> gameArrayP;
+	ArrayList<Integer> gameArrayN;
 	
 	public static final int MESSAGE_PALETTE = 0;
 	public static final int MESSAGE_ENDGAME = 1;
@@ -88,9 +88,9 @@ public class Guess extends Activity {
 		canvas.drawBitmap(baseBitmap, new Matrix(), paint);
 		iv.setImageBitmap(baseBitmap);
 		
-		for(int j = 0; j < coordinates.length; j+=4)
+		for(int j = 0; j < MyPalette.length; j+=4)
 		{
-			canvas.drawLine(coordinates[j], coordinates[j+1], coordinates[j+2], coordinates[j+3], paint); 
+			canvas.drawLine(MyPalette[j], MyPalette[j+1], MyPalette[j+2], MyPalette[j+3], paint); 
 		}
 		
 		try{
@@ -119,27 +119,27 @@ public class Guess extends Activity {
 		 }
 	    writer.endArray();
 	    
-	    //----------- title ----------
+		//倒數計時
+		time(writer);
+		}catch(Exception e) {
+			  Log.e("log_tag", "Error saving string "+e.toString());
+			  }
+	}
+	
+	public void time(JsonWriter writer){	
+		// 倒數計時     
+		mTextView = (TextView)findViewById(R.id.timeView3);
+		new CountDownTimer(5000,1000){
+				
+			//----------- title ----------
 		writer.name("title");
 		writer.beginArray();
 		writer.value(edtguess.getText().toString());  // <----- 改成題目變數
 		writer.endArray();
 		writer.endObject();
 		writer.flush();
-		writer.close();
-		}catch(Exception e) {
-			  Log.e("log_tag", "Error saving string "+e.toString());
-			  }
+		writer.close();      
 		
-		//倒數計時
-		time();
-	}
-	
-	public void time(){	
-		// 倒數計時     
-		mTextView = (TextView)findViewById(R.id.timeView3);
-		new CountDownTimer(5000,1000){
-		            
 			@Override
 			public void onFinish() {
 			// TODO Auto-generated method stub
@@ -149,10 +149,13 @@ public class Guess extends Activity {
 				.putString("data",edtguess.getText().toString())
 				.commit();
 				
+				//Deliver guess to GameService , then GameService will send it out
 				Intent intent = new Intent(GameService.ACTION_GUESS);
 				intent.putExtra("guess", preference.getString("data","unkown"));
 				startService(intent);
 				
+		
+		
 				//跳轉業面
 				if(i+1>7){
 					Intent intent2=new Intent();
@@ -210,7 +213,22 @@ public class Guess extends Activity {
 				MyPalette =(int[]) msg.obj;
 				MyPosition = msg.getData().getInt("MyPosition");
 				
-				print it and send it to EndGame
+				/*print it and */ send it to EndGame
+				// Bind them
+				for(int i = 0; i < MyPalette.length() + 1; i++)
+				{
+					if(i == 0)
+					{
+						gameArrayP.add(MyPosition);
+					}
+					else
+					{
+						gameArrayP.add(MyPalette[i]);
+					}
+				}
+				
+				send 
+				
 				break;
 			case MESSAGE_ENDGAME:
 				//store this palette at EndGame Activity
@@ -218,6 +236,17 @@ public class Guess extends Activity {
 				senderPosition = msg.getData().getInt("senderPosition");
 				
 				send it to EndGame
+				
+				//Bind
+				for(int j = 0; j < senderPalette.length() + 1; j++)
+				{
+					if(j == 0)
+					gameArrayN.add(senderPosition);
+					else
+					gameArrayN.add(senderPalette[j]);
+				}
+				
+				send
 			}
 		}
 	};

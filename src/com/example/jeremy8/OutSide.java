@@ -208,7 +208,7 @@ public class OutSide extends Activity {
 				do some thing
 				break;
 			case MESSAGE_JOIN_ROOM:
-				String roomID =(String) msg.obj;
+				String roomID2 =(String) msg.obj;
 				//判斷這是哪個room 人數+1
 				do some thing
 			}

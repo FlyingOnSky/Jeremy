@@ -73,7 +73,7 @@ public class Palette extends Activity {
 		MAX = MAXpre.getInt("population", 0);
 	    
 		//顯示
-		txtAns.setText(readAns);
+		txtAns.setText(MyGuess);
 		
 		//倒數計時
 		time();
@@ -237,7 +237,9 @@ public class Palette extends Activity {
 				MyGuess = (String) msg.obj;
 				MyPosition = msg.getData().getInt("MyPosition");
 				
-				print it and send it to EndGame
+				/*print it and*/ send it to EndGame
+				
+				
 				break;
 			case MESSAGE_ENDGAME:
 				senderGuess = (String) msg.obj;
