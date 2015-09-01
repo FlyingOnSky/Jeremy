@@ -27,12 +27,23 @@
     </ListView>
 
      <TextView
+         android:id="@+id/textView15"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content"
+         android:layout_alignBaseline="@+id/textView8"
+         android:layout_alignBottom="@+id/textView8"
+         android:layout_marginLeft="15dp"
+         android:layout_toRightOf="@+id/textView8"
+         android:text="0"
+         android:textAppearance="?android:attr/textAppearanceSmall" />
+
+     <TextView
          android:id="@+id/textView14"
          android:layout_width="wrap_content"
          android:layout_height="wrap_content"
+         android:layout_toRightOf="@+id/textView15"
+         android:layout_alignBaseline="@+id/textView8"
          android:layout_alignBottom="@+id/textView8"
-         android:layout_marginLeft="24dp"
-         android:layout_toRightOf="@+id/textView8"
          android:text=""
          android:textAppearance="?android:attr/textAppearanceSmall" />
 

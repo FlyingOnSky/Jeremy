@@ -9,6 +9,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
@@ -30,12 +31,13 @@ import android.widget.Toast;
 public class OutSide extends Activity {
 	private Button btncreatroom,btnnearby;
 	private ListView lstPrefer;
-//	private String[] roomName=new String[]{"Three Words","Oh Ha Ha","No Rule",
-//			"MDD","Seven words","17 center","Bear","Sports","*(=A=)*"};
-//	private String[] population=new String[]{"9/10 ","5/7","56/100",
-//			"50/60","150/200","7/9","9/15","8/10","2/30"};
+	private MyAdapter adapter;
 	private ArrayList<String> roomName;
 	private ArrayList<String> population;
+	private ArrayList<String> roomID;
+	private ArrayList<String> nowpopulation;
+	private SharedPreferences preference;
+	
 	//上次按下返回键的系统时间  
     private long lastBackTime = 0;  
     //当前按下返回键的系统时间  
@@ -69,9 +71,7 @@ public class OutSide extends Activity {
 		
 		//設定itemclick事件
 		lstPrefer.setOnItemClickListener(lstPreferListener);
-		
-		
-	
+
 	}
 	
 	//觸發事件
@@ -129,12 +129,15 @@ public class OutSide extends Activity {
 			TextView txtRoomname=(TextView)
 					convertView.findViewById(R.id.textView4);
 			TextView txtPopulation=(TextView)
+					convertView.findViewById(R.id.textView16);
+			TextView txtnowPopulation=(TextView)
 					convertView.findViewById(R.id.textView5);
-			
+
 			
 			//設定元件內容
 			txtRoomname.setText(roomName.get(position));
 			txtPopulation.setText(population.get(position));
+			txtnowPopulation.setText("0");
 			
 			return convertView;
 		}
@@ -148,6 +151,13 @@ public class OutSide extends Activity {
 		public void onItemClick(AdapterView<?> parent,
 				View view,int position,long id){
 			//顯示listView選項內容
+			//儲存資料
+			preference.edit()
+			.clear()
+			.putString("roomname",roomName.get(position))
+			.putInt("population",  Integer.parseInt(population.get(position)))		
+			.commit();
+			//轉換頁面
 			Intent intent3=new Intent();
 			intent3.setClass(OutSide.this,GameRoom.class);
 			startActivity(intent3);
@@ -201,16 +211,31 @@ public class OutSide extends Activity {
 		@Override
 		public void handleMessage(Message msg) {
 			switch(msg.what) {
-			case MESSAGE_NEW_ROOM:
-				String roomID = msg.getData().getString("roomID"); //roomID(Founder's address)
-				String roomName = msg.getData().getString("roomName"); //roomName
-				String population = msg.getData().getString("population"); //population
-				do some thing
+			case MESSAGE_NEW_ROOM://有人創房間
+				String roomIDtemp = msg.getData().getString("roomID"); //roomID(Founder's address)
+				String roomNametemp = msg.getData().getString("roomName"); //roomName
+				String populationtemp = msg.getData().getString("population"); //population
+				//加進arraylist中
+				roomID.add(roomIDtemp);
+				roomName.add(roomNametemp);
+				population.add(populationtemp);
+				//重新整理list
+				lstPrefer.setAdapter(adapter);
+
 				break;
-			case MESSAGE_JOIN_ROOM:
-				String roomID2 =(String) msg.obj;
+			case MESSAGE_JOIN_ROOM://有人加入房間
+				
+				String roomID2temp =(String) msg.obj;
+				
 				//判斷這是哪個room 人數+1
-				do some thing
+				int i=0;
+				do{
+					if(roomID2temp==roomID.get(i)){
+						int n=Integer.parseInt(nowpopulation.get(i))+1;
+						nowpopulation.set(i,String.valueOf(n));
+					}
+
+				}while(roomID2temp!=roomID.get(i));
 			}
 		}
 	};

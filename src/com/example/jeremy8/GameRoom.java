@@ -13,10 +13,12 @@ import android.os.Message;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
 public class GameRoom extends Activity {
-	private TextView txtroomname,txtpopulation;
+	private TextView txtroomname,txtpopulation,txtnowpopulation;
 	private SharedPreferences preference;
 	private String readroomname;
 	private int readpopulation;
@@ -28,11 +30,13 @@ public class GameRoom extends Activity {
 	public static final int MESSAGE_NEW_GAMER = 1;
 	
 	//清單+人物列表
+	private ListView listPrefer;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_game_room);
+		
 		
 		//Deliver this Activity's handler to service
 		GameService.getGameRoomHandler(mGameRoomHandler);
@@ -40,31 +44,29 @@ public class GameRoom extends Activity {
 		//取得介面元件
 		txtroomname=(TextView)findViewById(R.id.textView8);
 		txtpopulation=(TextView)findViewById(R.id.textView14);
+		listPrefer=(ListView)findViewById(R.id.listView3);
+		txtnowpopulation=(TextView)findViewById(R.id.textView15);
+		
 		
 		//尋找儲存檔
 		preference=getSharedPreferences("creatroom",MODE_PRIVATE);
+		
 		//拿資料
-		readroomname=preference.getString("roomname","unknown");
-		readpopulation=preference.getInt("population", 0);
+		readroomname=preference.getString("roomname","5words");
+		readpopulation=preference.getInt("population", 7);
 		
 		//顯示
 		txtroomname.setText(readroomname);	
-		txtpopulation.setText(String.valueOf(readpopulation));
+		txtpopulation.setText("/"+String.valueOf(readpopulation));
 		
-		//先直接開始~~
-		new AlertDialog.Builder(GameRoom.this)
-		.setTitle("~~Start~~")
-		.setIcon(R.drawable.ic_launcher)
-		.setMessage("Sure to Start?")
-		.setPositiveButton("Sure",new DialogInterface.OnClickListener()
-		{
-			public void onClick(DialogInterface dialoginterface,int i){
-				Intent intent=new Intent();
-				intent.setClass(GameRoom.this,Title.class);
-				startActivity(intent);
-			}
-		})
-		.show();
+		//建立arrayadapt
+		ArrayAdapter<String> adapterName=
+				new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,
+						nameList);
+		
+		//設定LISTVIEW資料來源
+		listPrefer.setAdapter(adapterName);
+			
 	}
 	
 	public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
@@ -138,6 +140,28 @@ public class GameRoom extends Activity {
 				//Add the address/name to ArrayList<String>
 				addressList.add(newAddress);
 				nameList.add(newName);
+				
+				//人數滿了就開始
+				int size=nameList.size();
+				if(size<readpopulation){
+					txtnowpopulation.setText(String.valueOf(size));
+				}else{
+					//開始~~
+					new AlertDialog.Builder(GameRoom.this)
+					.setTitle("~~Start~~")
+					.setIcon(R.drawable.ic_launcher)
+					.setMessage("Sure to Start?")
+					.setPositiveButton("Sure",new DialogInterface.OnClickListener()
+					{
+						public void onClick(DialogInterface dialoginterface,int i){
+							Intent intent=new Intent();
+							intent.setClass(GameRoom.this,Title.class);
+							startActivity(intent);
+						}
+					})
+					.show();
+				}
+							
 			}
 		}
 	};

@@ -45,9 +45,16 @@ public class CreatRoom extends Activity {
 				
 				switch(v.getId()){
 				case R.id.button8:
-					Intent intent=new Intent();
-					intent.setClass(CreatRoom.this,GameRoom.class);
-					startActivity(intent);
+					
+					Intent intent = new Intent(GameService.ACTION_CREATE_ROOM);
+					intent.putExtra("roomname",edtroomname.getText().toString());
+					intent.putExtra("population", Integer.parseInt(edtpopulation.getText().toString()));
+					startService(intent);
+					
+					Intent intent2=new Intent();
+					intent2.setClass(CreatRoom.this,GameRoom.class);
+					startActivity(intent2);
+					
 					break;
 				default:
 					break;			
@@ -59,6 +66,7 @@ public class CreatRoom extends Activity {
 	protected void onStop(){
 		super.onStop();
 			preference.edit()
+			.clear()
 			.putString("roomname",edtroomname.getText().toString())
 			.putInt("population", Integer.parseInt(edtpopulation.getText().toString()))		
 			.commit();
