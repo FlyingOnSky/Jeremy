@@ -1,5 +1,7 @@
 package com.example.jeremy8;
 
+import java.io.File;
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
@@ -76,5 +78,13 @@ public class EndGame extends Activity {
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
+	}
+	
+
+	protected void onStop(){
+		super.onStop();
+		File dir = getFilesDir();
+		File file = new File(dir,"temp.json");
+		file.delete();
 	}
 }

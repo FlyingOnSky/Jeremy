@@ -1,6 +1,7 @@
 package com.example.jeremy8;
 
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 
 import android.app.Activity;
@@ -43,8 +44,7 @@ public class Title extends Activity {
 		MAXpre = getSharedPreferences("creatroom",MODE_PRIVATE);
 		int MAX = MAXpre.getInt("population", 0);
 		
-		//计璸
-		time();
+		
 		
 		//承JSON郎
 		try{
@@ -55,62 +55,49 @@ public class Title extends Activity {
 		  writer.setIndent("  ");
 		  writer.beginObject();
 		  
-		  //------------ round ----------
-		  writer.name("round");
-		  writer.beginArray();
-		  writer.value(i);
-		  writer.endArray();
-		  
-		  //-------------- title ---------
-		  writer.name("title");
-		  writer.beginArray();
-		  writer.value(edttitle.getText().toString());
-		  writer.endArray();
-		  
-		  //------------ target --------------
-		  writer.name("target");
-			 writer.beginArray();
-			 if(self == MAX)  // <------ 璶眔self跑计の计-眖LISTVIEW
-			 {
-				 writer.value(0);
-			 }
-			 else
-			 {
-			 writer.value(self+1); // <------ 璶眔self跑计の计
-			 }
-			 writer.endArray();
-			 
-		  writer.endObject();
-		  writer.flush();
-		  writer.close();
-		      
+			//计璸
+				time(writer);
+				
 	      }catch(Exception e) {
 		  Log.e("log_tag", "Error saving string "+e.toString());
 		  }
-  
-
 
 	}
 	
 	//纗戈(ㄏノ嘿)
 	protected void onStop(){
 		super.onStop();		
-				
 	}
 	
-	public void time(){	
+	public void time(JsonWriter writer){	
 		// 计璸     
 		mTextView = (TextView)findViewById(R.id.timeView1);
 		new CountDownTimer(5000,1000){
 		            
-			@Override
-			public void onFinish() {
+			
+			public void onFinish(JsonWriter writer) {
+				  
 			// TODO Auto-generated method stub
 				mTextView.setText("Time is up");
 				//纗戈
 				preference.edit()
 				.putString("title",edttitle.getText().toString())
 				.commit();
+				
+				  try {
+					writer.name(Integer.toString(i));
+					writer.beginObject();
+					writer.name(Integer.toString(self));   // まself
+				    writer.value(edttitle.getText().toString());
+				    writer.endObject();
+				    writer.endObject();
+				    writer.flush();
+				    writer.close();
+				} catch (IOException e) {
+					Log.e("log_tag", "Somthing went wrong");
+				}
+				  
+				
 				
 				//Deliver the title to Service
 				Intent intent = new Intent(GameService.ACTION_GUESS);
@@ -130,6 +117,12 @@ public class Title extends Activity {
 			public void onTick(long millisUntilFinished) {
 			// TODO Auto-generated method stub
 			mTextView.setText("seconds remaining:"+millisUntilFinished/1000);
+			}
+
+			@Override
+			public void onFinish() {
+				// TODO Auto-generated method stub
+				
 			}
 			            
 			}.start();

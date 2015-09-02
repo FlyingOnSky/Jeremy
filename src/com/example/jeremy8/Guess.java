@@ -93,6 +93,10 @@ public class Guess extends Activity {
 			canvas.drawLine(MyPalette[j], MyPalette[j+1], MyPalette[j+2], MyPalette[j+3], paint); 
 		}
 		
+		int ini=self-i+1;  //引入self
+		if(ini < 1)
+			ini += MAX;
+		
 		try{
 			 FileOutputStream out = openFileOutput(FILENAME, MODE_WORLD_READABLE);
 		 
@@ -100,24 +104,9 @@ public class Guess extends Activity {
 	    writer.setIndent("  ");
 		writer.beginObject();
 	    
-		//--------- round ---------
-	    writer.name("round");
-	    writer.beginArray();
-	    writer.value(i);
-	    writer.endArray();
-	    
-	    //---------- target --------
-	    writer.name("target");
-	    writer.beginArray();
-	    if(self == MAX)  // <------ 要取得self變數及人數-從LISTVIEW取
-		 {
-			 writer.value(0);
-		 }
-		 else
-		 {
-		 writer.value(self+1); // <------ 要取得self變數-從LISTVIEW取
-		 }
-	    writer.endArray();
+		writer.name(Integer.toString(i));
+		writer.beginObject();
+		writer.name(Integer.toHexString(ini));
 	    
 		//倒數計時
 		time(writer);
@@ -131,24 +120,27 @@ public class Guess extends Activity {
 		mTextView = (TextView)findViewById(R.id.timeView3);
 		new CountDownTimer(5000,1000){
 				
-			//----------- title ----------
-		writer.name("title");
-		writer.beginArray();
-		writer.value(edtguess.getText().toString());  // <----- 改成題目變數
-		writer.endArray();
-		writer.endObject();
-		writer.flush();
-		writer.close();      
+			
 		
-			@Override
-			public void onFinish() {
+			
+			public void onFinish(JsonWriter writer) {
 			// TODO Auto-generated method stub
 				mTextView.setText("Time is up");
 				preference.edit().remove("guess");
 				preference.edit()
 				.putString("data",edtguess.getText().toString())
 				.commit();
-				
+				try{
+				//----------- title ----------
+					writer.value(edtguess.getText().toString());  // <----- 改成題目變數
+					writer.endObject();
+					writer.beginObject();
+					writer.flush();
+					writer.close();   
+				}catch(Exception e) {
+					  Log.e("log_tag", "Error saving string "+e.toString());
+				  }
+		
 				//Deliver guess to GameService , then GameService will send it out
 				Intent intent = new Intent(GameService.ACTION_GUESS);
 				intent.putExtra("guess", preference.getString("data","unkown"));
@@ -175,6 +167,12 @@ public class Guess extends Activity {
 			public void onTick(long millisUntilFinished) {
 			// TODO Auto-generated method stub
 			mTextView.setText("seconds remaining:"+millisUntilFinished/1000);
+			}
+
+			@Override
+			public void onFinish() {
+				// TODO Auto-generated method stub
+				
 			}
 			            
 			}.start();
@@ -207,46 +205,71 @@ public class Guess extends Activity {
 	private final Handler mGuessHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
+			
 			switch(msg.what) {
 			case MESSAGE_PALETTE:
 				//print this palette out and store it at EndGame Activity
 				MyPalette =(int[]) msg.obj;
 				MyPosition = msg.getData().getInt("MyPosition");
-				
-				/*print it and */ send it to EndGame
-				// Bind them
-				for(int i = 0; i < MyPalette.length() + 1; i++)
-				{
-					if(i == 0)
+				int ini3=MyPosition-i+1;
+				if(ini3 < 1)
+					ini3 += MAX;
+				try{
+					FileOutputStream tempf = openFileOutput("temp.json", MODE_WORLD_READABLE);
+					  JsonWriter temp = new JsonWriter(new OutputStreamWriter(tempf, "UTF-8"));
+					temp.setIndent("  ");
+					temp.beginObject();
+					temp.name(Integer.toString(i-1));
+					temp.beginObject();
+					temp.name(Integer.toString(ini3));
+					temp.beginArray();
+					for(int j = 0; j < MyPalette.length; j++,temp.endObject())
 					{
-						gameArrayP.add(MyPosition);
+						temp.value(MyPalette[j]);
 					}
-					else
-					{
-						gameArrayP.add(MyPalette[i]);
-					}
-				}
+					temp.endArray();
+					temp.endObject();
+					temp.endObject();
+					temp.flush();
+					temp.close();
+					
+				}catch(Exception e) {
+					  Log.e("log_tag", "Error saving string "+e.toString());
+				  }
+
 				
-				send 
 				
 				break;
 			case MESSAGE_ENDGAME:
 				//store this palette at EndGame Activity
 				senderPalette = (int[]) msg.obj;
 				senderPosition = msg.getData().getInt("senderPosition");
-				
-				send it to EndGame
-				
-				//Bind
-				for(int j = 0; j < senderPalette.length() + 1; j++)
-				{
-					if(j == 0)
-					gameArrayN.add(senderPosition);
-					else
-					gameArrayN.add(senderPalette[j]);
-				}
-				
-				send
+				int ini2 = senderPosition-i+2;
+				if(ini2 < 1)
+					ini2 += MAX;
+				try{
+					FileOutputStream tempf = openFileOutput("temp.json", MODE_WORLD_READABLE);
+					  JsonWriter temp = new JsonWriter(new OutputStreamWriter(tempf, "UTF-8"));
+					temp.setIndent("  ");
+					temp.beginObject();
+					temp.name(Integer.toString(i-1));
+					temp.beginObject();
+					temp.name(Integer.toString(ini2));
+					temp.beginArray();
+					for(int j = 0; j < senderPalette.length; j++,temp.endObject())
+					{
+						temp.value(senderPalette[j]);
+					}
+					temp.endArray();
+					temp.endObject();
+					temp.endObject();
+					temp.flush();
+					temp.close();
+					
+				}catch(Exception e) {
+					  Log.e("log_tag", "Error saving string "+e.toString());
+				  }
+
 			}
 		}
 	};

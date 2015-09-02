@@ -28,6 +28,8 @@ public class GameRoom extends Activity {
 	
 	public static final int MESSAGE_GAMER_LIST = 0;
 	public static final int MESSAGE_NEW_GAMER = 1;
+	public static final int MESSAGE_ASK_FOR_START_GAME = 2;
+	public static final int MESSAGE_START_GAME = 3;
 	
 	//清單+人物列表
 	private ListView listPrefer;
@@ -143,32 +145,35 @@ public class GameRoom extends Activity {
 				
 				//人數滿了就開始
 				int size=nameList.size();
-				if(size<readpopulation){
-					txtnowpopulation.setText(String.valueOf(size));
-				}else{
-					//開始~~
-					new AlertDialog.Builder(GameRoom.this)
-					.setTitle("~~Start~~")
-					.setIcon(R.drawable.ic_launcher)
-					.setMessage("Sure to Start?")
-					.setPositiveButton("Sure",new DialogInterface.OnClickListener()
-					{
-						public void onClick(DialogInterface dialoginterface,int i){
-							Intent intent=new Intent();
-							intent.setClass(GameRoom.this,Title.class);
-							startActivity(intent);
-						}
-					})
-					.show();
-				}
+				txtnowpopulation.setText(String.valueOf(size));
+				break;
+			case MESSAGE_ASK_FOR_START_GAME:
+				//ask for start the game (for founder)
+				new AlertDialog.Builder(GameRoom.this)
+				.setTitle("~~Start~~")
+				.setIcon(R.drawable.ic_launcher)
+				.setMessage("Sure to Start?")
+				.setPositiveButton("Sure",new DialogInterface.OnClickListener()
+				{
+					public void onClick(DialogInterface dialoginterface,int i){
+						Intent intent = new Intent(GameService.ACTION_START_GAME);
+						startService(intent);
+						
+						Intent intent2=new Intent();
+						intent2.setClass(GameRoom.this,Title.class);
+						startActivity(intent2);
+					}
+				})
+				.show();
+				break;
+			case MESSAGE_START_GAME:
+				//start the game (for other gamer beside founder)
+				Intent intent2=new Intent();
+				intent2.setClass(GameRoom.this,Title.class);
+				startActivity(intent2);
+				break;
 							
 			}
 		}
 	};
-	
-	/*//把資料傳到service
-	Intent intent = new Intent(GameService.ACTION_CREATE_ROOM);
-	intent.putExtra("roomname",readroomname);
-	intent.putExtra("population",readpopulation);
-	startService(intent);*/
 }

@@ -1,6 +1,7 @@
 package com.example.jeremy8;
 
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 
@@ -75,8 +76,7 @@ public class Palette extends Activity {
 		//顯示
 		txtAns.setText(MyGuess);
 		
-		//倒數計時
-		time();
+		
 		
 		this.iv = (ImageView) this.findViewById(R.id.imageView3);
 		// 创建一张空白图片
@@ -95,36 +95,22 @@ public class Palette extends Activity {
 		canvas.drawBitmap(baseBitmap, new Matrix(), paint);
 		iv.setImageBitmap(baseBitmap);
 		
+		int ini=self-i+1;  //引入self
+		if(ini < 1)
+			ini += MAX;
+			
 		try{
+			
 			 FileOutputStream out = openFileOutput(FILENAME, MODE_WORLD_READABLE);
 		 
 			 final JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
 			 writer.setIndent("  ");
 			 
 			 writer.beginObject();
-			 
-			 //---------- target ---------
-			 writer.name("target");
-			 writer.beginArray();
-			 if(self == MAX)  // <------ 要取得self變數及人數-從LISTVIEW取
-			 {
-				 writer.value(0);
-			 }
-			 else
-			 {
-			 writer.value(self+1); // <------ 要取得self變數及人數
-			 }
-			 writer.endArray();
-			
-			 //--------  round  --------
-			 writer.name("round");
-			 writer.beginArray();
-			 writer.value(i);  //  <------ 要取得round變數
-			 writer.endArray();
-		     
-			 //--------- coordinates ----------
-			 writer.name("coordinates");
-			 writer.beginArray();
+		     writer.name(Integer.toString(i));
+		     writer.beginObject();
+		     writer.name(Integer.toString(ini));
+		     writer.beginArray();
 		
 		iv.setOnTouchListener(new OnTouchListener() { 
 			  int startX; 
@@ -166,27 +152,33 @@ public class Palette extends Activity {
 				  return true;
 			  }
 		  });
-		writer.endArray();
-		writer.endObject();
-		writer.flush();
-		writer.close();
 		
+		//倒數計時
+				time(writer);
 		}catch(Exception e) {
 	  Log.e("log_tag", "Error saving string "+e.toString());
 	  }
 	}
 	
-	public void time(){	
+	public void time(JsonWriter writer){	
 		// 倒數計時     
 		mTextView = (TextView)findViewById(R.id.timeView2);
 		new CountDownTimer(5000,1000){
 		            
-			@Override
-			public void onFinish() {
+			
+			public void onFinish(JsonWriter writer) {
 			// TODO Auto-generated method stub
 				mTextView.setText("Time is up");
 				//儲存資料-未完成(任軒)
-				
+				try{
+				writer.endArray();
+				writer.endObject();
+				writer.endObject();
+				writer.flush();
+				writer.close();
+				}catch (IOException e) {
+					Log.e("log_tag", "Somthing went wrong");
+				}
 				//跳轉頁面
 				Intent intent2=new Intent();
 				intent2.setClass(Palette.this,Guess.class);
@@ -200,6 +192,12 @@ public class Palette extends Activity {
 			public void onTick(long millisUntilFinished) {
 			// TODO Auto-generated method stub
 			mTextView.setText("seconds remaining:"+millisUntilFinished/1000);
+			}
+
+			@Override
+			public void onFinish() {
+				// TODO Auto-generated method stub
+				
 			}
 			            
 			}.start();
@@ -232,20 +230,57 @@ public class Palette extends Activity {
 	private final Handler mPaletteHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
+
 			switch(msg.what) {
 			case MESSAGE_GUESS:
 				MyGuess = (String) msg.obj;
 				MyPosition = msg.getData().getInt("MyPosition");
 				
-				/*print it and*/ send it to EndGame
+				int ini3=MyPosition-i+1;
+				if(ini3 < 1)
+					ini3 += MAX;
 				
-				
+				try{
+					FileOutputStream tempf = openFileOutput("temp.json", MODE_WORLD_READABLE);
+					  JsonWriter temp = new JsonWriter(new OutputStreamWriter(tempf, "UTF-8"));
+					temp.setIndent("  ");
+					temp.beginObject();
+					temp.name(Integer.toString(i-1));
+					temp.beginObject();
+					temp.name(Integer.toString(ini3)).value(MyGuess);
+					temp.endObject();
+					temp.endObject();
+					temp.flush();
+					temp.close();
+					
+				}catch(Exception e) {
+					  Log.e("log_tag", "Error saving string "+e.toString());
+				  }
 				break;
 			case MESSAGE_ENDGAME:
 				senderGuess = (String) msg.obj;
 				senderPosition = msg.getData().getInt("senderPosition");
 				
-				send it to EndGame
+				int ini2=senderPosition-i+2;
+				if(ini2 < 1)
+					ini2 += MAX;
+						
+				try{
+					FileOutputStream tempf = openFileOutput("temp.json", MODE_WORLD_READABLE);
+					  JsonWriter temp = new JsonWriter(new OutputStreamWriter(tempf, "UTF-8"));
+					temp.setIndent("  ");
+					temp.beginObject();
+					temp.name(Integer.toString(i-1));
+					temp.beginObject();
+					temp.name(Integer.toString(ini2)).value(senderGuess);
+					temp.endObject();
+					temp.endObject();
+					temp.flush();
+					temp.close();
+					
+				}catch(Exception e) {
+					  Log.e("log_tag", "Error saving string "+e.toString());
+				  }
 			}
 		}
 	};

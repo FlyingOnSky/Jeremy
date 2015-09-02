@@ -230,17 +230,19 @@ public class OutSide extends Activity {
 				//判斷這是哪個room 人數+1
 				int i=0;
 				do{
-					if(roomID2temp==roomID.get(i)){
+					if(roomID2temp.equals(roomID.get(i)) ){
 						int n=Integer.parseInt(nowpopulation.get(i))+1;
 						nowpopulation.set(i,String.valueOf(n));
 					}
-
-				}while(roomID2temp!=roomID.get(i));
+					i+=1;
+				}while(!roomID2temp.equals(roomID.get(i)) );
 			}
 		}
 	};
 	
 	/*Intent intent = new Intent(GameService.ACTION_JOIN_ROOM);
-	intent.putExtra("roomID",);*/
+	intent.putExtra("roomID",);
+	intent.putExtra("roomMaxPopulation", Integer.valueOf( maxPopulationString ).intValue())
+	startService(intent)*/c
 	
 }
