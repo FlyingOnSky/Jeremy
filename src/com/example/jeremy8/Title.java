@@ -26,10 +26,12 @@ public class Title extends Activity {
 	private TextView mTextView;//倒數計時
 	private int i=1;
 	//任軒-json檔名-從LISTVIEW拿
-	String file = MAXpre.getString("roomname", "unknown");;;
-	String FILENAME = file+".json";
+	
 	
 	public static final int MESSAGE_GETSELF = 0;
+	
+	private Bundle selfLocated=this.getIntent().getExtras();
+	private int self=selfLocated.getInt("self");
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -43,8 +45,7 @@ public class Title extends Activity {
 		preference=getSharedPreferences("ans",MODE_PRIVATE);
 		MAXpre = getSharedPreferences("creatroom",MODE_PRIVATE);
 		int MAX = MAXpre.getInt("population", 0);
-		
-		
+		String file = MAXpre.getString("roomname", "unknown");
 		
 		//創JSON檔
 		try{
@@ -109,8 +110,10 @@ public class Title extends Activity {
 				intent2.setClass(Title.this,Palette.class);
 				Bundle bundle=new Bundle();
 				bundle.putInt("round",i+1);
+				bundle.putInt("self", self);
 				intent2.putExtras(bundle);
 				startActivity(intent2);
+				
 			}
 
 			@Override

@@ -28,7 +28,7 @@ public class Guess extends Activity {
 	private SharedPreferences preference, MAXpre;
 	private EditText edtguess;
 	private TextView mTextView;//倒數計時
-	private int i, MAX;
+	private int i, MAX, self;
 
 	//
 	private ImageView iv;
@@ -40,8 +40,6 @@ public class Guess extends Activity {
 	private int[] senderPalette;
 	private int senderPosition;
 	
-	String file = MAXpre.getString("roomname", "unknown");  // <------ 房間名稱+self
-	String FILENAME = file+".json";
 	ArrayList<Integer> gameArrayP;
 	ArrayList<Integer> gameArrayN;
 	
@@ -60,7 +58,7 @@ public class Guess extends Activity {
 		Intent intent1=this.getIntent();
 		Bundle bundle1=intent1.getExtras();
 		i=bundle1.getInt("round");
-		
+		self=bundle1.getInt("self");
 		
 		
 		//取得介面元件
@@ -68,8 +66,9 @@ public class Guess extends Activity {
 		
 		preference=getSharedPreferences("guess",MODE_PRIVATE);
 		MAXpre=getSharedPreferences("creatroom",MODE_PRIVATE);
-		MAX = MAXpre.getInt("population", 0);
-		
+		MAX = MAXpre.getInt("population", 7);
+		String file = MAXpre.getString("roomname", "unknown");  // <------ 房間名稱+self
+		String FILENAME = file+".json";
 		
 		this.iv = (ImageView) this.findViewById(R.id.imageView3);
 		// 创建一张空白图片
@@ -158,6 +157,7 @@ public class Guess extends Activity {
 				   intent3.setClass(Guess.this,Palette.class);
 				   Bundle bundle2=new Bundle();
 				   bundle2.putInt("round",i+1);
+				   bundle2.putInt("self", self);
 				   intent3.putExtras(bundle2);
 				   startActivity(intent3);
 				}

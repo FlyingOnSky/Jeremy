@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.bluetooth.BluetoothAdapter;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -33,12 +34,17 @@ public class GameRoom extends Activity {
 	
 	//清單+人物列表
 	private ListView listPrefer;
+	
+	private BluetoothAdapter mBluetoothAdapter;
+	
+	private Bundle selfLocated;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_game_room);
 		
+		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		
 		//Deliver this Activity's handler to service
 		GameService.getGameRoomHandler(mGameRoomHandler);
@@ -56,7 +62,6 @@ public class GameRoom extends Activity {
 		//拿資料
 		readroomname=preference.getString("roomname","5words");
 		readpopulation=preference.getInt("population", 7);
-		
 		//顯示
 		txtroomname.setText(readroomname);	
 		txtpopulation.setText("/"+String.valueOf(readpopulation));
@@ -159,8 +164,18 @@ public class GameRoom extends Activity {
 						Intent intent = new Intent(GameService.ACTION_START_GAME);
 						startService(intent);
 						
+						
 						Intent intent2=new Intent();
 						intent2.setClass(GameRoom.this,Title.class);
+						
+						for(int a=0; a < nameList.size(); a++)
+						{
+							if(mBluetoothAdapter.getAddress().equals(addressList.get(a)))
+							{
+								selfLocated.putInt("self", a+1);
+							}
+						}
+						intent2.putExtras(selfLocated);
 						startActivity(intent2);
 					}
 				})
@@ -170,6 +185,14 @@ public class GameRoom extends Activity {
 				//start the game (for other gamer beside founder)
 				Intent intent2=new Intent();
 				intent2.setClass(GameRoom.this,Title.class);
+				for(int a=0; a < nameList.size(); a++)
+				{
+					if(mBluetoothAdapter.getAddress().equals(addressList.get(a)))
+					{
+						selfLocated.putInt("self", a+1);
+					}
+				}
+				intent2.putExtras(selfLocated);
 				startActivity(intent2);
 				break;
 							

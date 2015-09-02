@@ -71,6 +71,8 @@ public class OutSide extends Activity {
 		
 		//設定itemclick事件
 		lstPrefer.setOnItemClickListener(lstPreferListener);
+		
+		preference=getSharedPreferences("creatroom",MODE_PRIVATE);
 
 	}
 	
@@ -157,6 +159,12 @@ public class OutSide extends Activity {
 			.putString("roomname",roomName.get(position))
 			.putInt("population",  Integer.parseInt(population.get(position)))		
 			.commit();
+			
+			Intent intent = new Intent(GameService.ACTION_JOIN_ROOM);
+			intent.putExtra("roomID",roomID.get(position));
+			intent.putExtra("roomMaxPopulation", Integer.valueOf(population.get(position)));
+			startService(intent);
+			
 			//轉換頁面
 			Intent intent3=new Intent();
 			intent3.setClass(OutSide.this,GameRoom.class);
@@ -239,10 +247,4 @@ public class OutSide extends Activity {
 			}
 		}
 	};
-	
-	/*Intent intent = new Intent(GameService.ACTION_JOIN_ROOM);
-	intent.putExtra("roomID",);
-	intent.putExtra("roomMaxPopulation", Integer.valueOf( maxPopulationString ).intValue())
-	startService(intent)*/c
-	
 }

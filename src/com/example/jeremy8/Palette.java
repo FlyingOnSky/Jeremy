@@ -37,7 +37,7 @@ public class Palette extends Activity {
 	private SharedPreferences preference, MAXpre;
 	private String readAns;
 	private TextView mTextView;//倒數計時
-	private int i, MAX;
+	private int i, MAX, self;
 	private String MyGuess;
 	private String senderGuess;
 	private int MyPosition;
@@ -47,8 +47,7 @@ public class Palette extends Activity {
 	public static final int MESSAGE_ENDGAME = 1;
 	
 	//任軒-json檔名-從LISTVIEW拿
-	String file = MAXpre.getString("roomname", "unknown");
-	String FILENAME = file+".json";
+	
 	public ArrayList<Integer> coordinate; 
 
 	@Override
@@ -62,6 +61,7 @@ public class Palette extends Activity {
 		Intent intent=this.getIntent();
 		Bundle bundle1=intent.getExtras();
 		i=bundle1.getInt("round");
+		self=bundle1.getInt("self");
 		
 		//取得介面元素
 		txtAns=(TextView)findViewById(R.id.textView12);
@@ -71,8 +71,9 @@ public class Palette extends Activity {
 		MAXpre=getSharedPreferences("creatroom",MODE_PRIVATE);
 		//拿資料
 	    readAns=preference.getString("data","unknown");
-		MAX = MAXpre.getInt("population", 0);
-	    
+		MAX = MAXpre.getInt("population", 7);
+		String file = MAXpre.getString("roomname", "unknown");
+		String FILENAME = file+".json";
 		//顯示
 		txtAns.setText(MyGuess);
 		
@@ -137,10 +138,15 @@ public class Palette extends Activity {
 					  coordinate.add(startY); 
 					  coordinate.add(stopX); 
 					  coordinate.add(stopX); 
-					  writer.value(startX);
-					  writer.value(startY);
-					  writer.value(stopX);
-					  writer.value(stopY);
+					  try {
+						writer.value(startX);
+						writer.value(startY);
+						writer.value(stopX);
+						writer.value(stopY);
+					} catch (IOException e) {
+						Log.e("log_tag", "Somthing went wrong");
+					}
+					  
 					  
 					// 实时更新开始坐标
 					  startX = (int) event.getX(); 
@@ -184,6 +190,7 @@ public class Palette extends Activity {
 				intent2.setClass(Palette.this,Guess.class);
 				Bundle bundle2=new Bundle();
 				bundle2.putInt("round",i+1);
+				bundle2.putInt("self", self);
 				intent2.putExtras(bundle2);
 				startActivity(intent2);
 			}
