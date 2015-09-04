@@ -30,11 +30,11 @@ public class CreatRoom extends Activity {
 		edtroomname=(EditText)findViewById(R.id.editText3);
 		edtpopulation=(EditText)findViewById(R.id.editText4);
 		btnok=(Button)findViewById(R.id.button8);
+		preference=getSharedPreferences("creatroom",MODE_PRIVATE);
 		
 		//設定觸發事件
 		btnok.setOnClickListener(btnResponse);
 		
-		preference=getSharedPreferences("creatroom",MODE_PRIVATE);
 	}
 	
 	// 按鈕觸發事件
@@ -42,37 +42,28 @@ public class CreatRoom extends Activity {
 				new Button.OnClickListener(){
 			@Override
 			public void onClick(View v){
-				
-				switch(v.getId()){
-				case R.id.button8:
 					
 					Intent intent = new Intent(GameService.ACTION_CREATE_ROOM);
 					intent.putExtra("roomname",edtroomname.getText().toString());
 					intent.putExtra("population", Integer.parseInt(edtpopulation.getText().toString()));
 					startService(intent);
 					
+					preference.edit().clear();
+					preference.edit().putString("roomname",edtroomname.getText().toString()).commit();
+					preference.edit().putInt("population", Integer.parseInt(edtpopulation.getText().toString())).commit();
+					
 					Intent intent2=new Intent();
 					intent2.setClass(CreatRoom.this,GameRoom.class);
 					startActivity(intent2);
-					
-					break;
-				default:
-					break;			
-				}
 			}
 		};
 		
-	//儲存資料(使用者名稱)
 	protected void onStop(){
 		super.onStop();
-			preference.edit()
-			.clear()
-			.putString("roomname",edtroomname.getText().toString())
-			.putInt("population", Integer.parseInt(edtpopulation.getText().toString()))		
-			.commit();
+		CreatRoom.this.finish();
 	}
 
-	@Override  
+/*	@Override  
     public boolean onKeyDown(int keyCode, KeyEvent event) {  
         //捕获返回键按下的事件  
         if(keyCode == KeyEvent.KEYCODE_BACK){  
@@ -92,7 +83,7 @@ public class CreatRoom extends Activity {
         }  
         return super.onKeyDown(keyCode, event);  
     }  
-
+*/
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -111,4 +102,5 @@ public class CreatRoom extends Activity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
+	
 }

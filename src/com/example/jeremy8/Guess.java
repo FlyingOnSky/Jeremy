@@ -18,11 +18,13 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.JsonWriter;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class Guess extends Activity {
 	private SharedPreferences preference, MAXpre;
@@ -274,5 +276,12 @@ public class Guess extends Activity {
 		}
 	};
 	
-	
+	public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {   
+        	Toast.makeText(this, "You can't leave now.", Toast.LENGTH_SHORT).show();
+            return true;   
+        }   
+        return super.onKeyDown(keyCode, event);   
+    }
 }
+

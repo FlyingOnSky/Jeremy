@@ -24,7 +24,7 @@ public class EndGame extends Activity {
 		setContentView(R.layout.activity_end_game);
 	}
 	
-	@Override  
+	/*@Override  
     public boolean onKeyDown(int keyCode, KeyEvent event) {  
         //捕获返回键按下的事件  
         if(keyCode == KeyEvent.KEYCODE_BACK){  
@@ -60,6 +60,7 @@ public class EndGame extends Activity {
         }  
         return super.onKeyDown(keyCode, event);  
     }  
+    */
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -80,6 +81,19 @@ public class EndGame extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 	
+	public void time()
+	{
+		
+	}
+	
+	public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {   
+        	Toast.makeText(this, "Leave program.", Toast.LENGTH_SHORT).show();
+        	
+            return true;   
+        }   
+        return super.onKeyDown(keyCode, event);   
+    }
 
 	protected void onStop(){
 		super.onStop();

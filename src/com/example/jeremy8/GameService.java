@@ -36,6 +36,7 @@ public class GameService extends Service {
 	public static final String ACTION_GUESS = "com.example.jeremy8.action.GUESS";
 	public static final String ACTION_PALETTE = "com.example.jeremy8.action.PALETTE";
 	public static final String ACTION_START_GAME = "com.example.jeremy8.action.START_GAME";
+	public static final String ACTION_CLEAR_GAMERLIST = "com.example.jeremy8.action.CLEAR_GAMERLIST";
 	
 	// Service's state
 	enum State{
@@ -62,6 +63,7 @@ public class GameService extends Service {
     private static Handler mGameRoomHandler;
     private static Handler mGuessHandler;
     private static Handler mPaletteHandler;
+    private static Handler mSelfSpaceHandler; //**
     
     //SharedPreferences
     SharedPreferences preference;
@@ -79,8 +81,8 @@ public class GameService extends Service {
     private ArrayList<AcceptThread> mAcceThreads;
     private ArrayList<BluetoothSocket> mSockets;
     private ArrayList<UUID> mUUIDs;
-    private ArrayList<String> mGameAddressList; //record all the address who is in the game room
-    private ArrayList<String> mGameNameList; //record all the device's name who is in the game room
+    private static ArrayList<String> mGameAddressList; //record all the address who is in the game room
+    private static ArrayList<String> mGameNameList; //record all the device's name who is in the game room
     
     //record how many AcceptThread is used , if two AcceptThread is used , then cancel all the AcceptThread
     private int AcceptAmount = 0;
@@ -171,10 +173,12 @@ public class GameService extends Service {
 			MyRoomID = mBluetoothAdapter.getAddress();
 			//Add my address/name to the gamer list 
        	 	mGameAddressList.add(MyAddress); 
-       	 	mGameNameList.add(MyName); 
+       	 	mGameNameList.add(MyName);
        	 	//record the room's exist population , at this point , it's only me(founder)
        	 	nowPopulation = 1;
-			
+       	 	//record the room's max population
+       	 	MyRoomMaxPopulation = intent.getIntExtra("population",0); //**
+       	 	
        	 	String roomName = intent.getStringExtra("roomname"); 
 			int population = intent.getIntExtra("population",0); 
 			
@@ -195,15 +199,16 @@ public class GameService extends Service {
 			System.arraycopy(byt,0,out,18,byt.length);
 			write(out);
 			
+			
 		} else if(action == GameService.ACTION_JOIN_ROOM) {
 			String roomID = intent.getStringExtra("roomID");
-			int roomMaxPopulation = intent.getIntExtra("roomMaxPopulation",-1); //**
+			//**int roomMaxPopulation = intent.getIntExtra("roomMaxPopulation",-1); //**
 			String addressName = MyAddress + "," + MyName;//addressName = "address,name" 
 			
 			//Record the room's id I get in
 			MyRoomID = roomID;
 			//Record the room's max population
-			MyRoomMaxPopulation = roomMaxPopulation; //**
+			//**MyRoomMaxPopulation = roomMaxPopulation; //**
 			
 			//Convert data to byte
 			byte[] byteRoomID = roomID.getBytes();
@@ -333,6 +338,12 @@ public class GameService extends Service {
 		} else if(action == GameService.ACTION_CANCEL) {
 			mState = State.Stopped;
 			cancel();
+		} else if(action == GameService.ACTION_CLEAR_GAMERLIST) {
+			while(mGameAddressList.size() > 0) {
+				mGameAddressList.remove(0);
+				mGameNameList.remove(0);
+			}
+			MyRoomMaxPopulation = -1; //**
 		}
 		
 		return START_NOT_STICKY;
@@ -437,6 +448,13 @@ public class GameService extends Service {
 	     //Write my address list to that device,and if that device has connected to the other device
 	     //then the address list will pass on those device too.
 	     write_address(device,i);
+	     
+	     //**test
+	     Message msg = mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_DEVICE_NAME,-1,i);
+	     Bundle bundle = new Bundle();
+	     bundle.putString("device_name", device.getName());
+	     msg.setData(bundle);
+	     mSelfSpaceHandler.sendMessage(msg);
 	    }
 	
 	private void connectionLost(int i) {   //the lost socket was created in ConnectThread
@@ -1390,6 +1408,17 @@ public class GameService extends Service {
 	
 	public static void getGameRoomHandler(Handler handler) {
 		mGameRoomHandler = handler;
+		
+		if(mGameAddressList.size() > 0) {
+			for(int i=0 ; i<mGameAddressList.size() ; i++) {
+				Message msg = mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_NEW_GAMER);
+			 	Bundle bundle = new Bundle();
+			 	bundle.putString("address",mGameAddressList.get(i));
+			 	bundle.putString("name", mGameNameList.get(i));
+			 	msg.setData(bundle);
+			 	mGameRoomHandler.sendMessage(msg);
+			}
+		}
 	}
 	
 	public static void getGuessHandler(Handler handler) {
@@ -1398,6 +1427,10 @@ public class GameService extends Service {
 	
 	public static void getPaletteHandler(Handler handler) {
 		mPaletteHandler = handler;
+	}
+	
+	public static void getSelfSpaceHandler(Handler handler) { //**
+		mSelfSpaceHandler = handler;
 	}
 	
 	@Override

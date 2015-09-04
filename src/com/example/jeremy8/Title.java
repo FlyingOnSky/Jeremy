@@ -13,12 +13,14 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.JsonWriter;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class Title extends Activity {
 	private EditText edttitle;
@@ -67,7 +69,8 @@ public class Title extends Activity {
 	
 	//儲存資料(使用者名稱)
 	protected void onStop(){
-		super.onStop();		
+		super.onStop();	
+		Title.this.finish();
 	}
 	
 	public void time(JsonWriter writer){	
@@ -153,4 +156,12 @@ public class Title extends Activity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
+	
+	public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {   
+        	Toast.makeText(this, "You can't leave now.", Toast.LENGTH_SHORT).show();
+            return true;   
+        }   
+        return super.onKeyDown(keyCode, event);   
+    }
 }

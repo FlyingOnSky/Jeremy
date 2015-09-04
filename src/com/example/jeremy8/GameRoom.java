@@ -20,7 +20,7 @@ import android.widget.TextView;
 
 public class GameRoom extends Activity {
 	private TextView txtroomname,txtpopulation,txtnowpopulation;
-	private SharedPreferences preference;
+	private SharedPreferences preference,prename;
 	private String readroomname;
 	private int readpopulation;
 	
@@ -46,15 +46,11 @@ public class GameRoom extends Activity {
 		
 		mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 		
-		//Deliver this Activity's handler to service
-		GameService.getGameRoomHandler(mGameRoomHandler);
-		
 		//取得介面元件
 		txtroomname=(TextView)findViewById(R.id.textView8);
 		txtpopulation=(TextView)findViewById(R.id.textView14);
 		listPrefer=(ListView)findViewById(R.id.listView3);
 		txtnowpopulation=(TextView)findViewById(R.id.textView15);
-		
 		
 		//尋找儲存檔
 		preference=getSharedPreferences("creatroom",MODE_PRIVATE);
@@ -76,7 +72,14 @@ public class GameRoom extends Activity {
 			
 	}
 	
-	public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
+	public synchronized void onResume() {
+	        super.onResume();
+	        
+	        //Deliver this Activity's handler to service
+			GameService.getGameRoomHandler(mGameRoomHandler);
+	 }
+	
+/*	public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
         if ((keyCode == KeyEvent.KEYCODE_BACK)) {   
             ConfirmExit();//按返回鍵，則執行退出確認
             return true;   
@@ -104,7 +107,7 @@ public class GameRoom extends Activity {
         });
         ad.show();//示對話框
     }
-
+*/
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		// Inflate the menu; this adds items to the action bar if it is present.
@@ -199,4 +202,19 @@ public class GameRoom extends Activity {
 			}
 		}
 	};
+	
+	public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {   
+            Intent intent = new Intent(GameService.ACTION_CLEAR_GAMERLIST);
+            startService(intent);
+            GameRoom.this.finish();
+        	return true;   
+        }   
+        return super.onKeyDown(keyCode, event);   
+    }
+	
+	protected void onStop(){
+		super.onStop();
+		GameRoom.this.finish();
+		}
 }

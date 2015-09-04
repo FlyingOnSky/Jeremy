@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 import com.example.jeremy8.SelfSpace.MyAdapter;
 
+
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
@@ -29,14 +30,16 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 public class OutSide extends Activity {
-	private Button btncreatroom,btnnearby;
+	private Button btncreatroom;
 	private ListView lstPrefer;
 	private MyAdapter adapter;
 	private ArrayList<String> roomName;
 	private ArrayList<String> population;
 	private ArrayList<String> roomID;
 	private ArrayList<String> nowpopulation;
+
 	private SharedPreferences preference;
+	
 	
 	//上次按下返回键的系统时间  
     private long lastBackTime = 0;  
@@ -51,17 +54,23 @@ public class OutSide extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_out_side);
 		
+		//初始化  新加的
+		roomName=new ArrayList<String>();
+		population=new ArrayList<String>();
+		roomID=new ArrayList<String>();
+		nowpopulation=new ArrayList<String>();
+		//
+		
+	
 		//Deliver this Activity's handler to service
 		GameService.getOutSideHandler(mOutSideHandler);
 		
 		//取得介面元件
 		btncreatroom=(Button)findViewById(R.id.button4);
-		btnnearby=(Button)findViewById(R.id.button5);
 		lstPrefer=(ListView)findViewById(R.id.listView2);
 		
 		//設定觸發事件
 		btncreatroom.setOnClickListener(btnResponse);
-		btnnearby.setOnClickListener(btnResponse);
 		
 		//建立自訂adapter
 		MyAdapter adapter=new MyAdapter(this);
@@ -88,11 +97,6 @@ public class OutSide extends Activity {
 				intent1.setClass(OutSide.this,CreatRoom.class);
 				startActivity(intent1);
 				break;
-			case R.id.button5:
-				Intent intent2=new Intent();
-				intent2.setClass(OutSide.this,NearBy.class);
-				startActivity(intent2);
-				break;
 			default:
 				break;			
 			}
@@ -100,6 +104,7 @@ public class OutSide extends Activity {
 	};
 	
 	public class MyAdapter extends BaseAdapter{
+
 		private LayoutInflater myInflater;
 		public MyAdapter(Context c){
 			myInflater=LayoutInflater.from(c);
@@ -139,7 +144,7 @@ public class OutSide extends Activity {
 			//設定元件內容
 			txtRoomname.setText(roomName.get(position));
 			txtPopulation.setText(population.get(position));
-			txtnowPopulation.setText("0");
+			txtnowPopulation.setText(roomName.size());
 			
 			return convertView;
 		}
@@ -162,7 +167,7 @@ public class OutSide extends Activity {
 			
 			Intent intent = new Intent(GameService.ACTION_JOIN_ROOM);
 			intent.putExtra("roomID",roomID.get(position));
-			intent.putExtra("roomMaxPopulation", Integer.valueOf(population.get(position)));
+			//**intent.putExtra("roomMaxPopulation", Integer.valueOf(population.get(position)));
 			startService(intent);
 			
 			//轉換頁面
@@ -172,7 +177,7 @@ public class OutSide extends Activity {
 		}
 	};
 	
-	@Override  
+/*	@Override  
     public boolean onKeyDown(int keyCode, KeyEvent event) {  
         //捕获返回键按下的事件  
         if(keyCode == KeyEvent.KEYCODE_BACK){  
@@ -192,7 +197,7 @@ public class OutSide extends Activity {
         }  
         return super.onKeyDown(keyCode, event);  
     }  
-  
+ */ 
   
 	
 
@@ -213,22 +218,40 @@ public class OutSide extends Activity {
 			return true;
 		}
 		return super.onOptionsItemSelected(item);
+	
 	}
+	
 	
 	private final Handler mOutSideHandler = new Handler() {
 		@Override
 		public void handleMessage(Message msg) {
 			switch(msg.what) {
 			case MESSAGE_NEW_ROOM://有人創房間
+				/*原本的
 				String roomIDtemp = msg.getData().getString("roomID"); //roomID(Founder's address)
 				String roomNametemp = msg.getData().getString("roomName"); //roomName
 				String populationtemp = msg.getData().getString("population"); //population
-				//加進arraylist中
+				*/
+				
+			    //新加的
+				Toast.makeText(getApplicationContext(),msg.getData().getString("roomName"),Toast.LENGTH_SHORT).show();
+				
+				roomID.add( msg.getData().getString("roomID"));
+				roomName.add(msg.getData().getString("roomName"));
+				population.add(msg.getData().getString("population"));
+				
+				adapter.notifyDataSetChanged();
+				//
+				
+				/*原本的
+			    //加進arraylist中
 				roomID.add(roomIDtemp);
 				roomName.add(roomNametemp);
 				population.add(populationtemp);
 				//重新整理list
 				lstPrefer.setAdapter(adapter);
+				*/
+			
 
 				break;
 			case MESSAGE_JOIN_ROOM://有人加入房間
@@ -236,15 +259,25 @@ public class OutSide extends Activity {
 				String roomID2temp =(String) msg.obj;
 				
 				//判斷這是哪個room 人數+1
-				int i=0;
+				for(int i=0 ; i<roomID.size(); i++) {
+					if(roomID2temp.equals(roomID.get(i)) ){
+						int n=Integer.parseInt(nowpopulation.get(i))+1;
+						nowpopulation.set(i,String.valueOf(n));
+					}
+				}
+				/*int i=0;
 				do{
 					if(roomID2temp.equals(roomID.get(i)) ){
 						int n=Integer.parseInt(nowpopulation.get(i))+1;
 						nowpopulation.set(i,String.valueOf(n));
 					}
 					i+=1;
-				}while(!roomID2temp.equals(roomID.get(i)) );
+				}while(!roomID2temp.equals(roomID.get(i)) );*/
 			}
 		}
 	};
+	
+	protected void onStop(){
+		super.onStop();
+	}
 }

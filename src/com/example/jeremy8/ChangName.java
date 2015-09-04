@@ -47,9 +47,8 @@ public class ChangName extends Activity {
 			switch(v.getId()){
 			case R.id.button6:
 				//確認有沒有輸入
-				if(edtname.getText().toString().equals("")){
-					
-				}else{
+				if(edtname.getText().toString().equals("")){}
+				else{
 					preference.edit()
 					.clear()                                       //刪除原本資料
 					.putString("name",edtname.getText().toString())//儲存現在資料
@@ -66,7 +65,7 @@ public class ChangName extends Activity {
 		}
 	};
 	
-	@Override  
+/*	@Override  
     public boolean onKeyDown(int keyCode, KeyEvent event) {  
         //捕获返回键按下的事件  
         if(keyCode == KeyEvent.KEYCODE_BACK){  
@@ -86,8 +85,7 @@ public class ChangName extends Activity {
         }  
         return super.onKeyDown(keyCode, event);  
     }  
-	
-	
+*/	
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -107,4 +105,21 @@ public class ChangName extends Activity {
 		}
 		return super.onOptionsItemSelected(item);
 	}
+	
+	public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {   
+        	Intent intent3=new Intent();
+			intent3.setClass(ChangName.this,SelfSpace.class);
+			startActivity(intent3);
+			ChangName.this.finish();
+            return true;   
+        }   
+        return super.onKeyDown(keyCode, event);   
+    }
+	
+	protected void onStop(){
+	super.onStop();
+	ChangName.this.finish();
+	}
 }
+

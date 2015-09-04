@@ -8,6 +8,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -44,6 +46,8 @@ public class SelfSpace extends Activity {
     private BluetoothAdapter mBluetoothAdapter = null;
     // Intent request codes
     private static final int REQUEST_ENABLE_BT = 1;
+    
+    public static final int MESSAGE_DEVICE_NAME = 0; //**
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -52,6 +56,8 @@ public class SelfSpace extends Activity {
 		//---------------------------------------------------------------------------
 		// Get local Bluetooth adapter
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        
+        GameService.getSelfSpaceHandler(mSelfSpaceHandler); //**
 
         // If the adapter is null, then Bluetooth is not supported
         if (mBluetoothAdapter == null) {
@@ -114,6 +120,7 @@ public class SelfSpace extends Activity {
 				Intent intent1=new Intent();
 				intent1.setClass(SelfSpace.this,ChangName.class);
 				startActivity(intent1);
+				SelfSpace.this.finish();
 				break;
 			case R.id.button3:
 				Intent intent2=new Intent();
@@ -200,7 +207,7 @@ public class SelfSpace extends Activity {
 	        ad.setPositiveButton("是", new DialogInterface.OnClickListener() {//退出按鈕
 	            public void onClick(DialogInterface dialog, int i) {
 	                // TODO Auto-generated method stub
-	            	finish();//關閉activity
+	               SelfSpace.this.finish();//關閉activity
 	  
 	            }
 	        });
@@ -263,4 +270,18 @@ public class SelfSpace extends Activity {
 	            break;
 	        }
 	 }
+	 
+	 private final Handler mSelfSpaceHandler = new Handler() { //**
+			@Override
+			public void handleMessage(Message msg) {
+				switch(msg.what) {
+				case MESSAGE_DEVICE_NAME:
+					String deviceName = msg.getData().getString("device_name");
+	                Toast.makeText(getApplicationContext(), "Connected to "
+	                               + deviceName, Toast.LENGTH_SHORT).show();
+					break;
+				}
+			}
+		};
+	 
 }

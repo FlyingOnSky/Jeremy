@@ -60,7 +60,6 @@ public class MainActivity extends Activity {
 					Intent intent=new Intent();
 					intent.setClass(MainActivity.this,SelfSpace.class);
 					startActivity(intent);
-					
 				}
 				
 				
@@ -74,6 +73,12 @@ public class MainActivity extends Activity {
 			@Override
 			public void onClick(View v)
 			{
+				if(sname.equals("")){//如果未輸入資料就將輸入值存檔
+					preference.edit()
+					.putString("name",edtName.getText().toString())
+					.commit();
+				}
+				
 				Intent intent=new Intent();
 				intent.setClass(MainActivity.this,SelfSpace.class);
 				startActivity(intent);
@@ -83,11 +88,7 @@ public class MainActivity extends Activity {
 		//儲存資料(使用者名稱)
 		protected void onStop(){
 			super.onStop();
-			if(sname.equals("")){//如果未輸入資料就將輸入值存檔
-				preference.edit()
-				.putString("name",edtName.getText().toString())
-				.commit();
-			}
+			MainActivity.this.finish();
 		}
 		
 		public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵

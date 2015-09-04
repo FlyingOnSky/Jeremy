@@ -19,6 +19,7 @@ import android.os.Handler;
 import android.os.Message;
 import android.util.JsonWriter;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
@@ -27,6 +28,7 @@ import android.view.View.OnTouchListener;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class Palette extends Activity {
 	private ImageView iv;
@@ -291,4 +293,13 @@ public class Palette extends Activity {
 			}
 		}
 	};
+	
+	public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
+        if ((keyCode == KeyEvent.KEYCODE_BACK)) {   
+        	Toast.makeText(this, "You can't leave now.", Toast.LENGTH_SHORT).show();
+            return true;   
+        }   
+        return super.onKeyDown(keyCode, event);   
+    }
 }
+
