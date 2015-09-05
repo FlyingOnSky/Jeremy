@@ -36,7 +36,8 @@ public class GameService extends Service {
 	public static final String ACTION_GUESS = "com.example.jeremy8.action.GUESS";
 	public static final String ACTION_PALETTE = "com.example.jeremy8.action.PALETTE";
 	public static final String ACTION_START_GAME = "com.example.jeremy8.action.START_GAME";
-	public static final String ACTION_CLEAR_GAMERLIST = "com.example.jeremy8.action.CLEAR_GAMERLIST";
+	public static final String ACTION_CLEAR_GAMEROOM = "com.example.jeremy8.action.CLEAR_GAMEROOM";
+	public static final String ACTION_CHANGE_NAME = "com.example.jeremy8.action.CHANGE_NAME";
 	
 	// Service's state
 	enum State{
@@ -338,12 +339,34 @@ public class GameService extends Service {
 		} else if(action == GameService.ACTION_CANCEL) {
 			mState = State.Stopped;
 			cancel();
-		} else if(action == GameService.ACTION_CLEAR_GAMERLIST) {
+		} else if(action == GameService.ACTION_CLEAR_GAMEROOM) {
+			//Clear the gamer list
 			while(mGameAddressList.size() > 0) {
 				mGameAddressList.remove(0);
 				mGameNameList.remove(0);
 			}
-			MyRoomMaxPopulation = -1; //**
+			
+			if(MyRoomID.equals(MyAddress)) { //if I am the game room's founder
+				//Clear the room Max population record
+				MyRoomMaxPopulation = -1; //**
+				
+				//send a message to tell everyone this game room was dismissed
+				//out = {9 roomID}
+				byte[] out = new byte[1 + MyRoomID.getBytes().length];
+				out[0] = 9;//9 represent "dismiss game room" message
+				System.arraycopy(MyRoomID.getBytes(), 0, out, 1, MyRoomID.getBytes().length);
+				write(out);
+			} else {
+				//send a message to tell everyone I leave from this game room
+				//out = {10 roomID MyAddress}
+				byte[] out = new byte[1 + MyRoomID.getBytes().length + MyAddress.getBytes().length];
+				out[0] = 10;//10 represent "leave game room" message
+				System.arraycopy(MyRoomID.getBytes(), 0, out, 1, MyRoomID.getBytes().length);
+				System.arraycopy(MyAddress.getBytes(), 0, out, 18, MyAddress.getBytes().length);
+				write(out);
+			}
+		} else if(action == GameService.ACTION_CHANGE_NAME) {
+			MyName = preference.getString("name","unknown");
 		}
 		
 		return START_NOT_STICKY;
@@ -1269,18 +1292,58 @@ public class GameService extends Service {
 		            		 
 		            	 }
 		            	 break;
-		             case 8: //8 means this is a "start game" request //**
+		             case 8: //8 means this is a "start game" message //**
 		            	 //buffer = {8 roomID}
-		            	 byte[] roomID6 = new byte[18];
-		            	 System.arraycopy(buffer, 1, roomID6, 0, bytes-1);
-		            	 
-		            	 //Check if this "start game" request is for my game room
+		            	 byte[] roomID6 = new byte[17];
+		            	 System.arraycopy(buffer, 1, roomID6, 0, 17);
 		            	 String stringRoomID2 = new String(roomID6);
+		            	 
+		            	 //delete this game room from the OutSide list because it has started
+	            		 mOutSideHandler.obtainMessage(OutSide.MESSAGE_DELETE_ROOM,-1,-1,stringRoomID2)
+	            		 .sendToTarget();
+		            	 
+		            	 //Check if this message is for my game room
 		            	 if(stringRoomID2.equals(MyRoomID) ) {
 		            		 //send a message to GameRoom to start the game
 		            		 mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_START_GAME).sendToTarget();
 		            	 }
 		            	 break;
+		             case 9://9 means this is a "dismiss game room" message //**
+		            	 //buffer = {9 roomID}
+		            	 byte[] roomID7 = new byte[17];
+		            	 System.arraycopy(buffer, 1, roomID7, 0, 17);
+		            	 String stringRoomID6 = new String(roomID7);
+		            	 
+		            	 //delete this game room from the OutSide list because it has dismissed
+	            		 mOutSideHandler.obtainMessage(OutSide.MESSAGE_DELETE_ROOM,-1,-1,stringRoomID6)
+	            		 .sendToTarget();
+	            		 
+	            		 //Check whether this message is for my game room
+		            	 if(stringRoomID6.equals(MyRoomID) ) {
+		            		 //send a message to GameRoom to quit
+		            		 mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_DISMISS_GAME).sendToTarget();
+		            	 }
+		            	 break;
+		             case 10://10 means this is a "leave game room" message
+		            	 //buffer = {10 roomID MyAddress}
+		            	 byte[] roomID8 = new byte[17];
+		            	 System.arraycopy(buffer, 1, roomID8, 0, 17);
+		            	 String stringRoomID7 = new String(roomID8);
+		            	 
+		            	 //send a message to OutSide to -1 exist population to this game rooom
+		            	 mOutSideHandler.obtainMessage(OutSide.MESSAGE_LEAVE_ROOM,-1,-1,stringRoomID7).sendToTarget();
+		            	 
+		            	 //Check whether this message is for my game room
+		            	 if(stringRoomID7.equals(MyRoomID) ) {
+		            		 byte[] checkAddress = new byte[17];
+		            		 System.arraycopy(buffer, 18, checkAddress, 0, 17);
+		            		 String stringCheckAddress = new String(checkAddress);
+		            		 
+		            		 mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_GAMER_OUT,-1,-1,stringCheckAddress)
+		            		 .sendToTarget();
+		            	 }
+		            	 break;
+		            	 
 		             }
 				 } catch(IOException e){
 	         	   Log.e(TAG, "disconnected", e);
