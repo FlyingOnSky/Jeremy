@@ -28,12 +28,17 @@ public class Title extends Activity {
 	private TextView mTextView;//倒數計時
 	private int i=1;
 	//任軒-json檔名-從LISTVIEW拿
+	public FileOutputStream out;
+	public JsonWriter writer;
+	private int MAX;
+	private String file;
+	String FILENAME;
 	
 	
-	public static final int MESSAGE_GETSELF = 0;
+	//public static final int MESSAGE_GETSELF = 0; //**不知道是做什麼的
 	
-	private Bundle selfLocated=this.getIntent().getExtras();
-	private int self=selfLocated.getInt("self");
+	private Bundle selfLocated=new Bundle();
+	private int self;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -42,6 +47,10 @@ public class Title extends Activity {
 		
 		//取得介面元件
 		edttitle=(EditText)findViewById(R.id.editText5);
+		
+		selfLocated=this.getIntent().getExtras();
+		self=selfLocated.getInt("self");
+		Toast.makeText(this, "self = "+self, Toast.LENGTH_SHORT).show();
 		
 		//建立儲存檔
 		preference=getSharedPreferences("ans",MODE_PRIVATE);
@@ -67,19 +76,13 @@ public class Title extends Activity {
 
 	}
 	
-	//儲存資料(使用者名稱)
-	protected void onStop(){
-		super.onStop();	
-		Title.this.finish();
-	}
-	
-	public void time(JsonWriter writer){	
+	public void time(final JsonWriter writer){
 		// 倒數計時     
 		mTextView = (TextView)findViewById(R.id.timeView1);
-		new CountDownTimer(5000,1000){
-		            
-			
-			public void onFinish(JsonWriter writer) {
+		new CountDownTimer(31000,1000){
+		     
+			@Override
+			public void onFinish() {
 				  
 			// TODO Auto-generated method stub
 				mTextView.setText("Time is up");
@@ -104,9 +107,9 @@ public class Title extends Activity {
 				
 				
 				//Deliver the title to Service
-				Intent intent = new Intent(GameService.ACTION_GUESS);
+				/*Intent intent = new Intent(GameService.ACTION_GUESS);
 				intent.putExtra("guess", preference.getString("data","unkown"));
-				startService(intent);
+				startService(intent);*/ //**還需要測試
 				
 				//跳轉業面
 				Intent intent2=new Intent();
@@ -123,12 +126,6 @@ public class Title extends Activity {
 			public void onTick(long millisUntilFinished) {
 			// TODO Auto-generated method stub
 			mTextView.setText("seconds remaining:"+millisUntilFinished/1000);
-			}
-
-			@Override
-			public void onFinish() {
-				// TODO Auto-generated method stub
-				
 			}
 			            
 			}.start();
@@ -164,4 +161,9 @@ public class Title extends Activity {
         }   
         return super.onKeyDown(keyCode, event);   
     }
+	
+	protected void onStop(){
+		super.onStop();	
+		Title.this.finish();
+	}
 }

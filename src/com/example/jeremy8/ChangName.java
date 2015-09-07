@@ -53,9 +53,6 @@ public class ChangName extends Activity {
 					.clear()                                       //刪除原本資料
 					.putString("name",edtname.getText().toString())//儲存現在資料
 					.commit();	
-					
-					Intent intent = new Intent(GameService.ACTION_CHANGE_NAME);
-					startService(intent);
 				}
 				//轉換頁面
 				Intent intent1=new Intent();

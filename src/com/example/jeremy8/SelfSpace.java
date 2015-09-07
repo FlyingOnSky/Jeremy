@@ -48,6 +48,9 @@ public class SelfSpace extends Activity {
     private static final int REQUEST_ENABLE_BT = 1;
     
     public static final int MESSAGE_DEVICE_NAME = 0; //**
+    public static final int MESSAGE_PRINT = 1; //**
+    public static final int MESSAGE_OK = 2;
+    public static final int MESSAGE_INT = 3;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -279,6 +282,22 @@ public class SelfSpace extends Activity {
 					String deviceName = msg.getData().getString("device_name");
 	                Toast.makeText(getApplicationContext(), "Connected to "
 	                               + deviceName, Toast.LENGTH_SHORT).show();
+					break;
+				case MESSAGE_PRINT:
+					byte[] buffer = (byte[]) msg.obj;
+					
+	            	byte[] addressName = new byte[buffer.length-22];
+	            	System.arraycopy(buffer, 22, addressName, 0, buffer.length-22);
+	            		 
+	            	String stringAddressName = new String(addressName);
+	            	
+	            	Toast.makeText(getApplicationContext(), stringAddressName, Toast.LENGTH_LONG).show();
+					break;
+				case MESSAGE_OK:
+					Toast.makeText(getApplicationContext(), "OK", Toast.LENGTH_SHORT).show();
+					break;
+				case MESSAGE_INT:
+					Toast.makeText(getApplicationContext(),""+msg.arg1,Toast.LENGTH_SHORT).show();
 					break;
 				}
 			}

@@ -36,8 +36,7 @@ public class GameService extends Service {
 	public static final String ACTION_GUESS = "com.example.jeremy8.action.GUESS";
 	public static final String ACTION_PALETTE = "com.example.jeremy8.action.PALETTE";
 	public static final String ACTION_START_GAME = "com.example.jeremy8.action.START_GAME";
-	public static final String ACTION_CLEAR_GAMEROOM = "com.example.jeremy8.action.CLEAR_GAMEROOM";
-	public static final String ACTION_CHANGE_NAME = "com.example.jeremy8.action.CHANGE_NAME";
+	public static final String ACTION_CLEAR_GAMERLIST = "com.example.jeremy8.action.CLEAR_GAMERLIST";
 	
 	// Service's state
 	enum State{
@@ -339,34 +338,12 @@ public class GameService extends Service {
 		} else if(action == GameService.ACTION_CANCEL) {
 			mState = State.Stopped;
 			cancel();
-		} else if(action == GameService.ACTION_CLEAR_GAMEROOM) {
-			//Clear the gamer list
+		} else if(action == GameService.ACTION_CLEAR_GAMERLIST) {
 			while(mGameAddressList.size() > 0) {
 				mGameAddressList.remove(0);
 				mGameNameList.remove(0);
 			}
-			
-			if(MyRoomID.equals(MyAddress)) { //if I am the game room's founder
-				//Clear the room Max population record
-				MyRoomMaxPopulation = -1; //**
-				
-				//send a message to tell everyone this game room was dismissed
-				//out = {9 roomID}
-				byte[] out = new byte[1 + MyRoomID.getBytes().length];
-				out[0] = 9;//9 represent "dismiss game room" message
-				System.arraycopy(MyRoomID.getBytes(), 0, out, 1, MyRoomID.getBytes().length);
-				write(out);
-			} else {
-				//send a message to tell everyone I leave from this game room
-				//out = {10 roomID MyAddress}
-				byte[] out = new byte[1 + MyRoomID.getBytes().length + MyAddress.getBytes().length];
-				out[0] = 10;//10 represent "leave game room" message
-				System.arraycopy(MyRoomID.getBytes(), 0, out, 1, MyRoomID.getBytes().length);
-				System.arraycopy(MyAddress.getBytes(), 0, out, 18, MyAddress.getBytes().length);
-				write(out);
-			}
-		} else if(action == GameService.ACTION_CHANGE_NAME) {
-			MyName = preference.getString("name","unknown");
+			MyRoomMaxPopulation = -1; //**
 		}
 		
 		return START_NOT_STICKY;
@@ -883,11 +860,11 @@ public class GameService extends Service {
 		            		 String stringAddressName = new String(addressName);
 		            		 
 		            		 //strArray[0] = address , strArray[1] = name
-		            		 strArray = stringAddressName.split(",");
+		            		 String[] strArray2 = stringAddressName.split(",");
 		            		 
 		            		 //Add his address/name to the game list
-		            		 mGameAddressList.add(strArray[0]);
-		            		 mGameNameList.add(strArray[1]);
+		            		 mGameAddressList.add(strArray2[0]);
+		            		 mGameNameList.add(strArray2[1]);
 		            		 
         	            	 // Step 1 : Return the gamer list to the new gamer
         	            	 ConnectedThread r;
@@ -922,7 +899,7 @@ public class GameService extends Service {
         	            					 out[j][2] = 0;// 0 means this is not the last part
         	            				 else
         	            					 out[j][2] = 1;// 0 means this is the last part
-        	            				 System.arraycopy(strArray[0].getBytes(),0,out[j],3,17); 
+        	            				 System.arraycopy(strArray2[0].getBytes(),0,out[j],3,17); 
         	            				 System.arraycopy(GameAddressNameByte
         	            						 ,j*1004,out[j],20,1004);
         	            				 
@@ -939,7 +916,7 @@ public class GameService extends Service {
         	            				 out[j][0] = 7;// 7 represent this is a separated message
         	            				 out[j][1] = 3;// 3 represent a message of "gamer list"
         	            				 out[j][2] = 0;// 0 means this is not the last part
-        	            				 System.arraycopy(strArray[0].getBytes(),0,out[j],3,17);
+        	            				 System.arraycopy(strArray2[0].getBytes(),0,out[j],3,17);
         	            				 System.arraycopy(GameAddressNameByte
         	            						 ,j*1004,out[j],20,1004);
         	            				 
@@ -953,7 +930,7 @@ public class GameService extends Service {
         	            			 lastPart[0] = 7;// 7 represent this is a separated message
         	            			 lastPart[1] = 3;// 3 represent a message of "gamer list"
         	            			 lastPart[2] = 0;// 1 means this is the last part
-        	            			 System.arraycopy(strArray[0].getBytes(),0,lastPart,3,17);
+        	            			 System.arraycopy(strArray2[0].getBytes(),0,lastPart,3,17);
         	            			 System.arraycopy(GameAddressNameByte,
         	            					 (GameAddressNameByte.length/1004)*1004,
         	            					 lastPart,20,GameAddressNameByte.length % 1004);
@@ -961,15 +938,20 @@ public class GameService extends Service {
         	            			 r.write(lastPart);
         	            		 }
         	            		 
-        	            	 } else { //GameAddressNameByte.length < 1006
-        	            		 //out = {3 targetAddress "address1,name1,address2,name2 ... "}
-        	            		 byte[] out =new byte[GameAddressNameByte.length + 18];
+        	            	 } else { //GameAddressNameByte.length < 1006 //**namelist test
+        	            		 //out = {3 targetAddress length "address1,name1,address2,name2 ... "}
+        	            		 byte[] out =new byte[GameAddressNameByte.length /*43*/+ 22]; //**
         	            		 out[0] = 3; // 3 represent a message of "gamer list"
-        	            		 System.arraycopy(strArray[0].getBytes(),0,out,1,17);
-        	            		 System.arraycopy(GameAddressNameByte,0,out,18
+        	            		 System.arraycopy(strArray2[0].getBytes(),0,out,1,17);
+        	            		 System.arraycopy(intToByteArray(GameAddressNameByte.length), 0, out, 18, 4);
+        	            		 System.arraycopy(GameAddressNameByte,0,out,22
         	            				 ,GameAddressNameByte.length);
+        	            		 /*String s = "F0:79:59:A7:D5:D5,abc,AB:97:0B:04:13:C9,cba"; //**
+        	            		 System.arraycopy(s.getBytes(),0,out,18,s.getBytes().length); //** */
+        	            		 mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_PRINT,-1,-1,out).sendToTarget(); //**
         	            		 
         	            		 r.write(out);
+        	            		 mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_INT,out.length,-1).sendToTarget();
         	            	 }
 		            		 
         	            	 // Step 2 : Deliver the new gamer's data to other gamer 
@@ -1004,19 +986,33 @@ public class GameService extends Service {
 		            	 }
 		            	 
 		            	 break;
-		             case 3://3 represent a message of gamer list
-		            	 //buffer = {3 targetAddress "address1,name1,address2,name2 ..."}
+		             case 3://3 represent a message of gamer list //**namelist test
+		            	 //buffer = {3 targetAddress length "address1,name1,address2,name2 ..."}
+		            	 mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_PRINT,-1,-1,buffer).sendToTarget(); //**
+		            	 mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_INT,buffer.length,-1).sendToTarget(); //**
 		            	 
 		            	 byte[] targetAddress = new byte[17];
 		            	 System.arraycopy(buffer,1,targetAddress,0,17);
-		            	 
 		            	 String stringTargetAddress = new String(targetAddress);
 		            	 
 		            	 if(stringTargetAddress.equals(MyAddress) ) {
-		            		 byte[] addressName = new byte[buffer.length-18];
-		            		 System.arraycopy(buffer, 18, addressName, 0, buffer.length-18);
+		            		 //Check how many byte that he send
+		            		 byte[] length = new byte[4];
+		            		 System.arraycopy(buffer, 18, length, 0, 4);
+		            		 int intLength = byteArrayToInt(length);
 		            		 
+		            		 byte[] addressName = new byte[intLength];
+		            		 System.arraycopy(buffer, 22, addressName, 0, intLength);
 		            		 String stringAddressName = new String(addressName);
+		            		 
+		            		 String[] strArray3 = stringAddressName.split(",");
+		            		 
+		            		 for(int i =0 ; i<strArray3.length ; i+=2) {
+		            			 mGameAddressList.add(strArray3[i]);
+		            		 }
+		            		 for(int j=1 ; j<strArray3.length ; j+=2) {
+		            			 mGameNameList.add(strArray3[j]);
+		            		 }
 		            		 
 		            		 mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_GAMER_LIST,-1,-1,stringAddressName)
 		            		 	.sendToTarget();
@@ -1032,15 +1028,18 @@ public class GameService extends Service {
 		            	 
 		            	 if(stringRoomID3.equals(MyRoomID)) {//if I am in this game room
 		            		 byte[] addressName = new byte[buffer.length-18];
-		            		 
 		            		 String stringAddressName = new String(addressName);
-		            		 String[] strArray2 = stringAddressName.split(",");//strArray2[0] = address , [1] = name
 		            		 
-		            		 if(!strArray2[0].equals(MyAddress)) {//if this address/name is not mine
+		            		 String[] strArray4 = stringAddressName.split(",");//strArray4[0] = address , [1] = name
+		            		 
+		            		 if(!strArray4[0].equals(MyAddress)) {//if this address/name is not mine
+		            			 mGameAddressList.add(strArray4[0]);
+		            			 mGameNameList.add(strArray4[1]);
+			            		 
 		            			 Message msg2 = mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_NEW_GAMER);
 		            			 Bundle bundle2 = new Bundle();
-		            			 bundle2.putString("address",strArray2[0]);
-		            			 bundle2.putString("name", strArray2[1]);
+		            			 bundle2.putString("address",strArray4[0]);
+		            			 bundle2.putString("name", strArray4[1]);
 		            			 msg2.setData(bundle2);
 		            			 mGameRoomHandler.sendMessage(msg2); 
 		            		 }
@@ -1292,58 +1291,18 @@ public class GameService extends Service {
 		            		 
 		            	 }
 		            	 break;
-		             case 8: //8 means this is a "start game" message //**
+		             case 8: //8 means this is a "start game" request //**
 		            	 //buffer = {8 roomID}
-		            	 byte[] roomID6 = new byte[17];
-		            	 System.arraycopy(buffer, 1, roomID6, 0, 17);
+		            	 byte[] roomID6 = new byte[18];
+		            	 System.arraycopy(buffer, 1, roomID6, 0, bytes-1);
+		            	 
+		            	 //Check if this "start game" request is for my game room
 		            	 String stringRoomID2 = new String(roomID6);
-		            	 
-		            	 //delete this game room from the OutSide list because it has started
-	            		 mOutSideHandler.obtainMessage(OutSide.MESSAGE_DELETE_ROOM,-1,-1,stringRoomID2)
-	            		 .sendToTarget();
-		            	 
-		            	 //Check if this message is for my game room
 		            	 if(stringRoomID2.equals(MyRoomID) ) {
 		            		 //send a message to GameRoom to start the game
 		            		 mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_START_GAME).sendToTarget();
 		            	 }
 		            	 break;
-		             case 9://9 means this is a "dismiss game room" message //**
-		            	 //buffer = {9 roomID}
-		            	 byte[] roomID7 = new byte[17];
-		            	 System.arraycopy(buffer, 1, roomID7, 0, 17);
-		            	 String stringRoomID6 = new String(roomID7);
-		            	 
-		            	 //delete this game room from the OutSide list because it has dismissed
-	            		 mOutSideHandler.obtainMessage(OutSide.MESSAGE_DELETE_ROOM,-1,-1,stringRoomID6)
-	            		 .sendToTarget();
-	            		 
-	            		 //Check whether this message is for my game room
-		            	 if(stringRoomID6.equals(MyRoomID) ) {
-		            		 //send a message to GameRoom to quit
-		            		 mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_DISMISS_GAME).sendToTarget();
-		            	 }
-		            	 break;
-		             case 10://10 means this is a "leave game room" message
-		            	 //buffer = {10 roomID MyAddress}
-		            	 byte[] roomID8 = new byte[17];
-		            	 System.arraycopy(buffer, 1, roomID8, 0, 17);
-		            	 String stringRoomID7 = new String(roomID8);
-		            	 
-		            	 //send a message to OutSide to -1 exist population to this game rooom
-		            	 mOutSideHandler.obtainMessage(OutSide.MESSAGE_LEAVE_ROOM,-1,-1,stringRoomID7).sendToTarget();
-		            	 
-		            	 //Check whether this message is for my game room
-		            	 if(stringRoomID7.equals(MyRoomID) ) {
-		            		 byte[] checkAddress = new byte[17];
-		            		 System.arraycopy(buffer, 18, checkAddress, 0, 17);
-		            		 String stringCheckAddress = new String(checkAddress);
-		            		 
-		            		 mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_GAMER_OUT,-1,-1,stringCheckAddress)
-		            		 .sendToTarget();
-		            	 }
-		            	 break;
-		            	 
 		             }
 				 } catch(IOException e){
 	         	   Log.e(TAG, "disconnected", e);

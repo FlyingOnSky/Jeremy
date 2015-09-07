@@ -31,19 +31,22 @@ public class Guess extends Activity {
 	private EditText edtguess;
 	private TextView mTextView;//倒數計時
 	private int i, MAX, self;
-
+	public String file;
+	public String FILENAME;
+	public FileOutputStream out;
+    public JsonWriter writer;
 	//
 	private ImageView iv;
 	private Bitmap baseBitmap;
 	private Canvas canvas;
 	private Paint paint;
-	private int[] MyPalette;  // <--------------- 接收資料存放處
+	private float[] MyPalette={10,10,20,20};  // <--------------- 接收資料存放處
 	private int MyPosition;
-	private int[] senderPalette;
+	private float[] senderPalette;
 	private int senderPosition;
 	
-	ArrayList<Integer> gameArrayP;
-	ArrayList<Integer> gameArrayN;
+	//ArrayList<Integer> gameArrayP;
+	//ArrayList<Integer> gameArrayN;
 	
 	public static final int MESSAGE_PALETTE = 0;
 	public static final int MESSAGE_ENDGAME = 1;
@@ -55,7 +58,7 @@ public class Guess extends Activity {
 		setContentView(R.layout.activity_guess);
 		
 		//Deliver this Activity's handler to service , so service can update this activity
-		GameService.getGuessHandler(mGuessHandler);
+		//**GameService.getGuessHandler(mGuessHandler);
 		
 		Intent intent1=this.getIntent();
 		Bundle bundle1=intent1.getExtras();
@@ -72,7 +75,7 @@ public class Guess extends Activity {
 		String file = MAXpre.getString("roomname", "unknown");  // <------ 房間名稱+self
 		String FILENAME = file+".json";
 		
-		this.iv = (ImageView) this.findViewById(R.id.imageView3);
+		this.iv = (ImageView) this.findViewById(R.id.imageView4);
 		// 创建一张空白图片
 		baseBitmap = Bitmap.createBitmap(480, 640, Bitmap.Config.ARGB_8888);
 		// 创建一张画布
@@ -89,16 +92,14 @@ public class Guess extends Activity {
 		canvas.drawBitmap(baseBitmap, new Matrix(), paint);
 		iv.setImageBitmap(baseBitmap);
 		
-		for(int j = 0; j < MyPalette.length; j+=4)
-		{
-			canvas.drawLine(MyPalette[j], MyPalette[j+1], MyPalette[j+2], MyPalette[j+3], paint); 
-		}
+		
+		canvas.drawLines(MyPalette,0,MyPalette.length, paint); 
 		
 		int ini=self-i+1;  //引入self
 		if(ini < 1)
 			ini += MAX;
 		
-		try{
+/*		try{
 			 FileOutputStream out = openFileOutput(FILENAME, MODE_WORLD_READABLE);
 		 
 			 final JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
@@ -108,30 +109,29 @@ public class Guess extends Activity {
 		writer.name(Integer.toString(i));
 		writer.beginObject();
 		writer.name(Integer.toHexString(ini));
-	    
+*/	    
 		//倒數計時
 		time(writer);
-		}catch(Exception e) {
+/*		}catch(Exception e) {
 			  Log.e("log_tag", "Error saving string "+e.toString());
-			  }
+			  }*/
 	}
 	
-	public void time(JsonWriter writer){	
+	public void time(final JsonWriter writer){	
 		// 倒數計時     
 		mTextView = (TextView)findViewById(R.id.timeView3);
-		new CountDownTimer(5000,1000){
+		new CountDownTimer(31000,1000){
 				
-			
-		
-			
-			public void onFinish(JsonWriter writer) {
+			@Override
+			public void onFinish() {
 			// TODO Auto-generated method stub
 				mTextView.setText("Time is up");
-				preference.edit().remove("guess");
-				preference.edit()
+		/*		preference.edit().remove("guess");
+		   	    preference.edit()
 				.putString("data",edtguess.getText().toString())
 				.commit();
-				try{
+		*/
+		/*		try{
 				//----------- title ----------
 					writer.value(edtguess.getText().toString());  // <----- 改成題目變數
 					writer.endObject();
@@ -141,11 +141,11 @@ public class Guess extends Activity {
 				}catch(Exception e) {
 					  Log.e("log_tag", "Error saving string "+e.toString());
 				  }
-		
+		*/
 				//Deliver guess to GameService , then GameService will send it out
-				Intent intent = new Intent(GameService.ACTION_GUESS);
-				intent.putExtra("guess", preference.getString("data","unkown"));
-				startService(intent);
+				//**Intent intent = new Intent(GameService.ACTION_GUESS);
+				//**intent.putExtra("guess", preference.getString("data","unkown"));
+				//**startService(intent);
 				
 		
 		
@@ -169,12 +169,6 @@ public class Guess extends Activity {
 			public void onTick(long millisUntilFinished) {
 			// TODO Auto-generated method stub
 			mTextView.setText("seconds remaining:"+millisUntilFinished/1000);
-			}
-
-			@Override
-			public void onFinish() {
-				// TODO Auto-generated method stub
-				
 			}
 			            
 			}.start();
@@ -211,7 +205,7 @@ public class Guess extends Activity {
 			switch(msg.what) {
 			case MESSAGE_PALETTE:
 				//print this palette out and store it at EndGame Activity
-				MyPalette =(int[]) msg.obj;
+				MyPalette =(float[]) msg.obj;
 				MyPosition = msg.getData().getInt("MyPosition");
 				int ini3=MyPosition-i+1;
 				if(ini3 < 1)
@@ -244,7 +238,7 @@ public class Guess extends Activity {
 				break;
 			case MESSAGE_ENDGAME:
 				//store this palette at EndGame Activity
-				senderPalette = (int[]) msg.obj;
+				senderPalette = (float[]) msg.obj;
 				senderPosition = msg.getData().getInt("senderPosition");
 				int ini2 = senderPosition-i+2;
 				if(ini2 < 1)

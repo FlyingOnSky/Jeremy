@@ -81,8 +81,7 @@
 				<action android:name="com.example.jeremy8.action.GUESS" />
 				<action android:name="com.example.jeremy8.action.PALETTE" />
 				<action android:name="com.example.jeremy8.action.START_GAME" />
-				<action android:name="com.example.jeremy8.action.CLEAR_GAMEROOM"/>
-				<action android:name="com.example.jeremy8.action.CHANGE_NAME" />
+				<action android:name="com.example.jeremy8.action.CLEAR_GAMERLIST"/>
             </intent-filter>
         </service>
     </application>

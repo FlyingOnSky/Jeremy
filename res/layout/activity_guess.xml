@@ -13,9 +13,7 @@
         android:id="@+id/imageView4"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_alignParentTop="true"
-        android:layout_centerHorizontal="true"
-        android:src="@drawable/pictitle01" />
+        android:layout_above="@+id/textView13" />
 
     <TextView
         android:id="@+id/textView13"

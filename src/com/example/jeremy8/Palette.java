@@ -77,6 +77,7 @@ public class Palette extends Activity {
 		String file = MAXpre.getString("roomname", "unknown");
 		String FILENAME = file+".json";
 		//顯示
+		MyGuess="Hello";
 		txtAns.setText(MyGuess);
 		
 		
@@ -102,7 +103,7 @@ public class Palette extends Activity {
 		if(ini < 1)
 			ini += MAX;
 			
-		try{
+		/*try{
 			
 			 FileOutputStream out = openFileOutput(FILENAME, MODE_WORLD_READABLE);
 		 
@@ -114,7 +115,7 @@ public class Palette extends Activity {
 		     writer.beginObject();
 		     writer.name(Integer.toString(ini));
 		     writer.beginArray();
-		
+		 */
 		iv.setOnTouchListener(new OnTouchListener() { 
 			  int startX; 
 			  int startY;
@@ -136,19 +137,21 @@ public class Palette extends Activity {
 					  canvas.drawLine(startX, startY, stopX, stopY, paint); 
 					  
 					  //紀錄與傳輸座標  傳輸還在努力中
-					  coordinate.add(startX);
+				/*	  coordinate.add(startX);
 					  coordinate.add(startY); 
 					  coordinate.add(stopX); 
 					  coordinate.add(stopX); 
-					  try {
+				*/	  
+				/*	  try {
 						writer.value(startX);
 						writer.value(startY);
 						writer.value(stopX);
 						writer.value(stopY);
 					} catch (IOException e) {
-						Log.e("log_tag", "Somthing went wrong");
+						Log.e("log_tag", "Error saving string "+e.toString());
+						e.printStackTrace();
 					}
-					  
+				*/	  
 					  
 					// 实时更新开始坐标
 					  startX = (int) event.getX(); 
@@ -161,24 +164,26 @@ public class Palette extends Activity {
 			  }
 		  });
 		
-		//倒數計時
-				time(writer);
-		}catch(Exception e) {
-	  Log.e("log_tag", "Error saving string "+e.toString());
-	  }
+			//倒數計時
+			time(/*writer*/);
+	/*	}catch(Exception e) {
+			Log.e("log_tag", "Error saving string "+e.toString());
+		}
+	*/
 	}
 	
-	public void time(JsonWriter writer){	
+	public void time(/*final JsonWriter writer*/){	
 		// 倒數計時     
 		mTextView = (TextView)findViewById(R.id.timeView2);
-		new CountDownTimer(5000,1000){
+		new CountDownTimer(31000,1000){
 		            
 			
-			public void onFinish(JsonWriter writer) {
+			@Override
+			public void onFinish() {
 			// TODO Auto-generated method stub
 				mTextView.setText("Time is up");
 				//儲存資料-未完成(任軒)
-				try{
+			/*	try{
 				writer.endArray();
 				writer.endObject();
 				writer.endObject();
@@ -187,7 +192,7 @@ public class Palette extends Activity {
 				}catch (IOException e) {
 					Log.e("log_tag", "Somthing went wrong");
 				}
-				//跳轉頁面
+			*/	//跳轉頁面
 				Intent intent2=new Intent();
 				intent2.setClass(Palette.this,Guess.class);
 				Bundle bundle2=new Bundle();
@@ -202,13 +207,7 @@ public class Palette extends Activity {
 			// TODO Auto-generated method stub
 			mTextView.setText("seconds remaining:"+millisUntilFinished/1000);
 			}
-
-			@Override
-			public void onFinish() {
-				// TODO Auto-generated method stub
-				
-			}
-			            
+			
 			}.start();
 		}
 	
@@ -233,7 +232,7 @@ public class Palette extends Activity {
 	}
 	
 	/*Intent intent = new Intent(GameService.ACTION_PALETTE);
-	intent.putExtra("coordinate", );//<-------int[]
+	intent.putExtra("coordinate", coordinate);//<-------int[]
 	startService(intent);*/
 	
 	private final Handler mPaletteHandler = new Handler() {

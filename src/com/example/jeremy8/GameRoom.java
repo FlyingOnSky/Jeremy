@@ -17,6 +17,7 @@ import android.view.MenuItem;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class GameRoom extends Activity {
 	private TextView txtroomname,txtpopulation,txtnowpopulation;
@@ -29,17 +30,15 @@ public class GameRoom extends Activity {
 	
 	public static final int MESSAGE_GAMER_LIST = 0;
 	public static final int MESSAGE_NEW_GAMER = 1;
-	public static final int MESSAGE_GAMER_OUT = 2;
-	public static final int MESSAGE_ASK_FOR_START_GAME = 3;
-	public static final int MESSAGE_START_GAME = 4;
-	public static final int MESSAGE_DISMISS_GAME = 5;
+	public static final int MESSAGE_ASK_FOR_START_GAME = 2;
+	public static final int MESSAGE_START_GAME = 3;
 	
 	//清單+人物列表
 	private ListView listPrefer;
 	
 	private BluetoothAdapter mBluetoothAdapter;
 	
-	private Bundle selfLocated;
+	private Bundle selfLocated = new Bundle();;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -135,6 +134,7 @@ public class GameRoom extends Activity {
 			switch(msg.what) {
 			case MESSAGE_GAMER_LIST:
 				String addressNameList =(String) msg.obj; //addressNameList = "address1,name1,address2,name2 ..."
+				nameList.add(addressNameList); //**
 				String[] str = addressNameList.split(",");
 				
 				//Add each address/name to ArrayList<String>
@@ -145,7 +145,7 @@ public class GameRoom extends Activity {
 					nameList.add(str[i]);
 				}
 				break;
-			case MESSAGE_NEW_GAMER://Someone join this game room
+			case MESSAGE_NEW_GAMER:
 				String newAddress = msg.getData().getString("address");
 				String newName = msg.getData().getString("name");
 				
@@ -154,23 +154,11 @@ public class GameRoom extends Activity {
 				nameList.add(newName);
 				
 				//人數滿了就開始
-				int size=nameList.size();
-				txtnowpopulation.setText(String.valueOf(size));
+				//int size=nameList.size(); //**測試沒comment會不會怎樣
+				//txtnowpopulation.setText(String.valueOf(size)); //**測試沒comment會不會怎樣
 				break;
-			case MESSAGE_GAMER_OUT://Someone leave this game room
-				String checkAddress = (String) msg.obj;
-				
-				for(int i=0 ; i<nameList.size() ; i++) {
-					if( checkAddress.equals(nameList.get(i)) ) {
-						addressList.remove(i);
-						nameList.remove(i);
-						
-						int size2=nameList.size();
-						txtnowpopulation.setText(String.valueOf(size2));
-					}
-				}
-				break;
-			case MESSAGE_ASK_FOR_START_GAME://ask for start the game (for founder)
+			case MESSAGE_ASK_FOR_START_GAME:
+				//ask for start the game (for founder)
 				new AlertDialog.Builder(GameRoom.this)
 				.setTitle("~~Start~~")
 				.setIcon(R.drawable.ic_launcher)
@@ -178,12 +166,8 @@ public class GameRoom extends Activity {
 				.setPositiveButton("Sure",new DialogInterface.OnClickListener()
 				{
 					public void onClick(DialogInterface dialoginterface,int i){
-						Intent intent = new Intent(GameService.ACTION_START_GAME);
-						startService(intent);
-						
-						
-						Intent intent2=new Intent();
-						intent2.setClass(GameRoom.this,Title.class);
+						/*Intent intent = new Intent(GameService.ACTION_START_GAME);
+						startService(intent);*/ //**測試沒comment會不會怎樣
 						
 						for(int a=0; a < nameList.size(); a++)
 						{
@@ -192,13 +176,16 @@ public class GameRoom extends Activity {
 								selfLocated.putInt("self", a+1);
 							}
 						}
+						Intent intent2=new Intent();
+						intent2.setClass(GameRoom.this,Title.class);
 						intent2.putExtras(selfLocated);
 						startActivity(intent2);
 					}
 				})
 				.show();
 				break;
-			case MESSAGE_START_GAME://start the game (for other gamer beside founder)
+			case MESSAGE_START_GAME:
+				//start the game (for other gamer beside founder)
 				Intent intent2=new Intent();
 				intent2.setClass(GameRoom.this,Title.class);
 				for(int a=0; a < nameList.size(); a++)
@@ -211,9 +198,6 @@ public class GameRoom extends Activity {
 				intent2.putExtras(selfLocated);
 				startActivity(intent2);
 				break;
-			case MESSAGE_DISMISS_GAME://dismiss this game room
-				GameRoom.this.finish();
-				break;
 							
 			}
 		}
@@ -221,7 +205,7 @@ public class GameRoom extends Activity {
 	
 	public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
         if ((keyCode == KeyEvent.KEYCODE_BACK)) {   
-            Intent intent = new Intent(GameService.ACTION_CLEAR_GAMEROOM);
+            Intent intent = new Intent(GameService.ACTION_CLEAR_GAMERLIST);
             startService(intent);
             GameRoom.this.finish();
         	return true;   

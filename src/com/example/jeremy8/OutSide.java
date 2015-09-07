@@ -48,8 +48,6 @@ public class OutSide extends Activity {
     
     public static final int MESSAGE_NEW_ROOM = 0;
     public static final int MESSAGE_JOIN_ROOM = 1;
-    public static final int MESSAGE_LEAVE_ROOM = 2;
-    public static final int MESSAGE_DELETE_ROOM = 3;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -146,7 +144,7 @@ public class OutSide extends Activity {
 			//設定元件內容
 			txtRoomname.setText(roomName.get(position));
 			txtPopulation.setText(population.get(position));
-			txtnowPopulation.setText(roomName.size());
+			txtnowPopulation.setText("0");
 			
 			return convertView;
 		}
@@ -258,6 +256,7 @@ public class OutSide extends Activity {
 
 				break;
 			case MESSAGE_JOIN_ROOM://有人加入房間
+				
 				String roomID2temp =(String) msg.obj;
 				
 				//判斷這是哪個room 人數+1
@@ -275,31 +274,6 @@ public class OutSide extends Activity {
 					}
 					i+=1;
 				}while(!roomID2temp.equals(roomID.get(i)) );*/
-				
-				break;
-			case MESSAGE_LEAVE_ROOM://Some one quit the game room
-				String roomID3temp =(String) msg.obj;
-				
-				//Check which room this is and -1 to its exist population
-				for(int i=0 ; i<roomID.size(); i++) {
-					if(roomID3temp.equals(roomID.get(i)) ){
-						int n=Integer.parseInt(nowpopulation.get(i))-1;
-						nowpopulation.set(i,String.valueOf(n));
-					}
-				}
-				break;
-			case MESSAGE_DELETE_ROOM://A founder has delete his game room
-				String roomID4temp =(String) msg.obj;
-				
-				//Check which room this is and delete it
-				for(int i=0 ; i<roomID.size(); i++) {
-					if(roomID4temp.equals(roomID.get(i)) ){
-						roomID.remove(i);
-						roomName.remove(i);
-						population.remove(i);
-					}
-				}
-				break;
 			}
 		}
 	};
