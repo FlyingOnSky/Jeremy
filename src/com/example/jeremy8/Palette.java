@@ -44,13 +44,14 @@ public class Palette extends Activity {
 	private String senderGuess;
 	private int MyPosition;
 	private int senderPosition;
+	private int[] draw;
 	
 	public static final int MESSAGE_GUESS = 0;
 	public static final int MESSAGE_ENDGAME = 1;
 	
 	//任軒-json檔名-從LISTVIEW拿
 	
-	public ArrayList<Integer> coordinate; 
+	public ArrayList<Integer> coordinate=new ArrayList<Integer>(); 
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -77,7 +78,6 @@ public class Palette extends Activity {
 		String file = MAXpre.getString("roomname", "unknown");
 		String FILENAME = file+".json";
 		//顯示
-		MyGuess="Hello";
 		txtAns.setText(MyGuess);
 		
 		
@@ -103,7 +103,7 @@ public class Palette extends Activity {
 		if(ini < 1)
 			ini += MAX;
 			
-		/*try{
+/*		try{
 			
 			 FileOutputStream out = openFileOutput(FILENAME, MODE_WORLD_READABLE);
 		 
@@ -115,7 +115,7 @@ public class Palette extends Activity {
 		     writer.beginObject();
 		     writer.name(Integer.toString(ini));
 		     writer.beginArray();
-		 */
+*/		
 		iv.setOnTouchListener(new OnTouchListener() { 
 			  int startX; 
 			  int startY;
@@ -134,15 +134,15 @@ public class Palette extends Activity {
 					  int stopX = (int) event.getX(); 
 					  int stopY = (int) event.getY();  
 					// 在开始和结束坐标间画一条线  
-					  canvas.drawLine(startX, startY, stopX, stopY, paint); 
 					  
+					 canvas.drawLine(startX, startY, stopX, stopY, paint); 
 					  //紀錄與傳輸座標  傳輸還在努力中
-				/*	  coordinate.add(startX);
+					  coordinate.add(startX);
 					  coordinate.add(startY); 
 					  coordinate.add(stopX); 
 					  coordinate.add(stopX); 
-				*/	  
-				/*	  try {
+				  
+			/*		try {
 						writer.value(startX);
 						writer.value(startY);
 						writer.value(stopX);
@@ -151,8 +151,8 @@ public class Palette extends Activity {
 						Log.e("log_tag", "Error saving string "+e.toString());
 						e.printStackTrace();
 					}
-				*/	  
-					  
+			*/			
+					 
 					// 实时更新开始坐标
 					  startX = (int) event.getX(); 
 					  startY = (int) event.getY();  
@@ -164,26 +164,24 @@ public class Palette extends Activity {
 			  }
 		  });
 		
-			//倒數計時
-			time(/*writer*/);
-	/*	}catch(Exception e) {
-			Log.e("log_tag", "Error saving string "+e.toString());
-		}
-	*/
-	}
+		//倒數計時
+				time(/*writer*/);
+/*		}catch(Exception e) {
+	  Log.e("log_tag", "Error saving string "+e.toString());
+	  }
+*/	}
 	
 	public void time(/*final JsonWriter writer*/){	
 		// 倒數計時     
 		mTextView = (TextView)findViewById(R.id.timeView2);
-		new CountDownTimer(31000,1000){
+		new CountDownTimer(61000,1000){
 		            
-			
 			@Override
 			public void onFinish() {
 			// TODO Auto-generated method stub
 				mTextView.setText("Time is up");
 				//儲存資料-未完成(任軒)
-			/*	try{
+/*				try{
 				writer.endArray();
 				writer.endObject();
 				writer.endObject();
@@ -191,8 +189,18 @@ public class Palette extends Activity {
 				writer.close();
 				}catch (IOException e) {
 					Log.e("log_tag", "Somthing went wrong");
+				}*/	
+				
+				draw=new int[coordinate.size()];
+				for(int j=0;j<coordinate.size();j++){
+					draw[j]=coordinate.get(j);
 				}
-			*/	//跳轉頁面
+				
+				Intent intent = new Intent(GameService.ACTION_PALETTE);
+				intent.putExtra("coordinate", draw);//<-------int[]
+				startService(intent);
+				
+				//跳轉頁面
 				Intent intent2=new Intent();
 				intent2.setClass(Palette.this,Guess.class);
 				Bundle bundle2=new Bundle();
@@ -207,7 +215,7 @@ public class Palette extends Activity {
 			// TODO Auto-generated method stub
 			mTextView.setText("seconds remaining:"+millisUntilFinished/1000);
 			}
-			
+
 			}.start();
 		}
 	
@@ -231,9 +239,7 @@ public class Palette extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 	
-	/*Intent intent = new Intent(GameService.ACTION_PALETTE);
-	intent.putExtra("coordinate", coordinate);//<-------int[]
-	startService(intent);*/
+	
 	
 	private final Handler mPaletteHandler = new Handler() {
 		@Override
@@ -243,12 +249,12 @@ public class Palette extends Activity {
 			case MESSAGE_GUESS:
 				MyGuess = (String) msg.obj;
 				MyPosition = msg.getData().getInt("MyPosition");
-				
+				txtAns.setText(MyGuess);
 				int ini3=MyPosition-i+1;
 				if(ini3 < 1)
 					ini3 += MAX;
 				
-				try{
+				/*try{
 					FileOutputStream tempf = openFileOutput("temp.json", MODE_WORLD_READABLE);
 					  JsonWriter temp = new JsonWriter(new OutputStreamWriter(tempf, "UTF-8"));
 					temp.setIndent("  ");
@@ -263,7 +269,7 @@ public class Palette extends Activity {
 					
 				}catch(Exception e) {
 					  Log.e("log_tag", "Error saving string "+e.toString());
-				  }
+				  }*/
 				break;
 			case MESSAGE_ENDGAME:
 				senderGuess = (String) msg.obj;
@@ -273,7 +279,7 @@ public class Palette extends Activity {
 				if(ini2 < 1)
 					ini2 += MAX;
 						
-				try{
+	/*			try{
 					FileOutputStream tempf = openFileOutput("temp.json", MODE_WORLD_READABLE);
 					  JsonWriter temp = new JsonWriter(new OutputStreamWriter(tempf, "UTF-8"));
 					temp.setIndent("  ");
@@ -288,7 +294,8 @@ public class Palette extends Activity {
 					
 				}catch(Exception e) {
 					  Log.e("log_tag", "Error saving string "+e.toString());
-				  }
+				}*/
+				break;
 			}
 		}
 	};

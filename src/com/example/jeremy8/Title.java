@@ -34,12 +34,10 @@ public class Title extends Activity {
 	private String file;
 	String FILENAME;
 	
-	
-	//public static final int MESSAGE_GETSELF = 0; //**不知道是做什麼的
-	
+	//public static final int MESSAGE_GETSELF = 0;
+
 	private Bundle selfLocated=new Bundle();
 	private int self;
-
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -47,10 +45,9 @@ public class Title extends Activity {
 		
 		//取得介面元件
 		edttitle=(EditText)findViewById(R.id.editText5);
-		
 		selfLocated=this.getIntent().getExtras();
 		self=selfLocated.getInt("self");
-		Toast.makeText(this, "self = "+self, Toast.LENGTH_SHORT).show();
+		Toast.makeText(this, ""+self, Toast.LENGTH_SHORT).show();
 		
 		//建立儲存檔
 		preference=getSharedPreferences("ans",MODE_PRIVATE);
@@ -60,18 +57,17 @@ public class Title extends Activity {
 		
 		//創JSON檔
 		try{
-		  String FILENAME = file+".json";
-		  //gives file name
-		  FileOutputStream out = openFileOutput(FILENAME, MODE_WORLD_READABLE);
-		  JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
-		  writer.setIndent("  ");
-		  writer.beginObject();
+			String FILENAME = file+".json";
+			//gives file name
+			FileOutputStream out = openFileOutput(FILENAME, MODE_WORLD_READABLE);
+			JsonWriter writer = new JsonWriter(new OutputStreamWriter(out, "UTF-8"));
+			writer.setIndent("  ");
+			writer.beginObject();
 		  
 			//倒數計時
-				time(writer);
-				
+			time(writer);
 	      }catch(Exception e) {
-		  Log.e("log_tag", "Error saving string "+e.toString());
+	    	  Log.e("log_tag", "Error saving string "+e.toString());
 		  }
 
 	}
@@ -83,15 +79,14 @@ public class Title extends Activity {
 		     
 			@Override
 			public void onFinish() {
-				  
 			// TODO Auto-generated method stub
 				mTextView.setText("Time is up");
-				//儲存資料
+								//儲存資料
 				preference.edit()
 				.putString("title",edttitle.getText().toString())
 				.commit();
 				
-				  try {
+				try {
 					writer.name(Integer.toString(i));
 					writer.beginObject();
 					writer.name(Integer.toString(self));   // 引入self
@@ -103,13 +98,11 @@ public class Title extends Activity {
 				} catch (IOException e) {
 					Log.e("log_tag", "Somthing went wrong");
 				}
-				  
-				
 				
 				//Deliver the title to Service
-				/*Intent intent = new Intent(GameService.ACTION_GUESS);
-				intent.putExtra("guess", preference.getString("data","unkown"));
-				startService(intent);*/ //**還需要測試
+				Intent intent = new Intent(GameService.ACTION_GUESS);
+				intent.putExtra("guess", edttitle.getText().toString());
+				startService(intent);
 				
 				//跳轉業面
 				Intent intent2=new Intent();
@@ -119,17 +112,17 @@ public class Title extends Activity {
 				bundle.putInt("self", self);
 				intent2.putExtras(bundle);
 				startActivity(intent2);
-				
+			
 			}
 
 			@Override
 			public void onTick(long millisUntilFinished) {
-			// TODO Auto-generated method stub
-			mTextView.setText("seconds remaining:"+millisUntilFinished/1000);
+				// TODO Auto-generated method stub
+				mTextView.setText("seconds remaining:"+millisUntilFinished/1000);
 			}
-			            
-			}.start();
-		}
+		}.start();
+		
+	}
 
 			
 	

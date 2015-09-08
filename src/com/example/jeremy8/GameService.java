@@ -36,7 +36,8 @@ public class GameService extends Service {
 	public static final String ACTION_GUESS = "com.example.jeremy8.action.GUESS";
 	public static final String ACTION_PALETTE = "com.example.jeremy8.action.PALETTE";
 	public static final String ACTION_START_GAME = "com.example.jeremy8.action.START_GAME";
-	public static final String ACTION_CLEAR_GAMERLIST = "com.example.jeremy8.action.CLEAR_GAMERLIST";
+	public static final String ACTION_CLEAR_GAMEROOM = "com.example.jeremy8.action.CLEAR_GAMEROOM";
+	public static final String ACTION_CHANGE_NAME = "com.example.jeremy8.action.CHANGE_NAME";
 	
 	// Service's state
 	enum State{
@@ -96,13 +97,20 @@ public class GameService extends Service {
     private String MyAddress;
     private String MyName;
     //record my position in the gamer list
-    private int MyPosition;
+    private static int MyPosition;
     //record my room's max population
-    private int MyRoomMaxPopulation; //**
+    private int MyRoomMaxPopulation;
     //record the room's exist population
-    private int nowPopulation; //**
+    private int nowPopulation;
     //record who is the target to send the guess and palette
     private String targetAddress;
+    
+    //for deliver data to Guess Activity
+    private static boolean GuessAlive = false;
+    private static float[] tempFloat_PALETTE = new float[0];
+    private static float[] tempFloat_ENDGAME = new float[0];
+    private static ArrayList<float[]> tempFloatArrayList = new ArrayList<float[]>();
+    private static ArrayList<Integer> senderPositionArrayList = new ArrayList<Integer>();
     
 	@Override
 	public void onCreate() {
@@ -252,8 +260,9 @@ public class GameService extends Service {
 			byte[] palette = new byte[coordinate.length*4];
 			
 			//Convert int[] to byte[]
-			for(int i=0; i<palette.length; i++) {
-				byte[] XorY = intToByteArray(coordinate[i]);
+			for(int i=0; i<coordinate.length; i++) {
+				byte[] XorY = new byte[4];
+				XorY = intToByteArray(coordinate[i]);
 				System.arraycopy(XorY,0,palette,i*4,4);
 			}
 			
@@ -327,7 +336,7 @@ public class GameService extends Service {
 				write(out);
 			}
 			
-		} else if(action == GameService.ACTION_START_GAME) { //**
+		} else if(action == GameService.ACTION_START_GAME) {
 			//send a message to everyone in the game room and tell them to start the game 
 			//out = {8 roomID}
 			byte[] out = new byte[1 + MyRoomID.getBytes().length];
@@ -338,12 +347,35 @@ public class GameService extends Service {
 		} else if(action == GameService.ACTION_CANCEL) {
 			mState = State.Stopped;
 			cancel();
-		} else if(action == GameService.ACTION_CLEAR_GAMERLIST) {
+		} else if(action == GameService.ACTION_CLEAR_GAMEROOM) {
+			//Clear the gamer list
 			while(mGameAddressList.size() > 0) {
 				mGameAddressList.remove(0);
 				mGameNameList.remove(0);
 			}
-			MyRoomMaxPopulation = -1; //**
+			
+			if(MyRoomID.equals(MyAddress)) { //if I am the game room's founder
+				//Clear the room Max population record
+				MyRoomMaxPopulation = -1;
+				
+				//send a message to tell everyone this game room was dismissed
+				//out = {9 roomID}
+				byte[] out = new byte[1 + MyRoomID.getBytes().length];
+				out[0] = 9;//9 represent "dismiss game room" message
+				System.arraycopy(MyRoomID.getBytes(), 0, out, 1, MyRoomID.getBytes().length);
+				write(out);
+			} else {
+				//send a message to tell everyone I leave from this game room
+				//out = {10 roomID MyAddress}
+				byte[] out = new byte[1 + MyRoomID.getBytes().length + MyAddress.getBytes().length];
+				out[0] = 10;//10 represent "leave game room" message
+				System.arraycopy(MyRoomID.getBytes(), 0, out, 1, MyRoomID.getBytes().length);
+				System.arraycopy(MyAddress.getBytes(), 0, out, 18, MyAddress.getBytes().length);
+				write(out);
+			}
+			
+		} else if(action == GameService.ACTION_CHANGE_NAME) {
+			MyName = preference.getString("name","unknown");
 		}
 		
 		return START_NOT_STICKY;
@@ -555,6 +587,12 @@ public class GameService extends Service {
 						,addressByte.length % 1021); 
 				r.write(lastPart);
 			}
+    	} else {
+    		//out = {0 "address1,address2,... "}
+    		byte[] out = new byte[1 + addressByte.length];
+    		out[0] = 0;
+    		System.arraycopy(addressByte, 0, out, 1, addressByte.length);
+    		r.write(out);
     	}
     }
     
@@ -866,7 +904,15 @@ public class GameService extends Service {
 		            		 mGameAddressList.add(strArray2[0]);
 		            		 mGameNameList.add(strArray2[1]);
 		            		 
-        	            	 // Step 1 : Return the gamer list to the new gamer
+		            		 //Step 1 : Add this gamer to GameRoom UI
+		            		 Message msg2 = mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_NEW_GAMER);
+	            			 Bundle bundle2 = new Bundle();
+	            			 bundle2.putString("address",strArray2[0]);
+	            			 bundle2.putString("name", strArray2[1]);
+	            			 msg2.setData(bundle2);
+	            			 mGameRoomHandler.sendMessage(msg2);
+	            			 
+        	            	 // Step 2 : Return the gamer list to the new gamer
         	            	 ConnectedThread r;
 	            			 synchronized (this) {
             	               	 r = mConnThreads.get(I);
@@ -948,13 +994,13 @@ public class GameService extends Service {
         	            				 ,GameAddressNameByte.length);
         	            		 /*String s = "F0:79:59:A7:D5:D5,abc,AB:97:0B:04:13:C9,cba"; //**
         	            		 System.arraycopy(s.getBytes(),0,out,18,s.getBytes().length); //** */
-        	            		 mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_PRINT,-1,-1,out).sendToTarget(); //**
+        	            		 //mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_PRINT,-1,-1,out).sendToTarget(); //**
         	            		 
         	            		 r.write(out);
-        	            		 mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_INT,out.length,-1).sendToTarget();
+        	            		 //mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_INT,out.length,-1).sendToTarget();
         	            	 }
 		            		 
-        	            	 // Step 2 : Deliver the new gamer's data to other gamer 
+        	            	 // Step 3 : Deliver the new gamer's data to other gamer 
 		            		 for (int i = 0; i < 3; i++) {
 		            	    	 try {
 		            	             synchronized (this) {
@@ -971,8 +1017,7 @@ public class GameService extends Service {
 		            	    	} catch(Exception e) {}
 		            		 }
 		            		 
-		            		 //**
-		            		 //Step 3 : Check if the population fit the max population
+		            		 //Step 4 : Check if the population fit the max population
 		            		 nowPopulation++;
 		            		 if(nowPopulation == MyRoomMaxPopulation) {
 		            			 //deliver a message to GameRoom to ask founder to start the game
@@ -988,8 +1033,8 @@ public class GameService extends Service {
 		            	 break;
 		             case 3://3 represent a message of gamer list //**namelist test
 		            	 //buffer = {3 targetAddress length "address1,name1,address2,name2 ..."}
-		            	 mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_PRINT,-1,-1,buffer).sendToTarget(); //**
-		            	 mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_INT,buffer.length,-1).sendToTarget(); //**
+		            	 //mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_PRINT,-1,-1,buffer).sendToTarget(); //**
+		            	 //mSelfSpaceHandler.obtainMessage(SelfSpace.MESSAGE_INT,buffer.length,-1).sendToTarget(); //**
 		            	 
 		            	 byte[] targetAddress = new byte[17];
 		            	 System.arraycopy(buffer,1,targetAddress,0,17);
@@ -1014,8 +1059,8 @@ public class GameService extends Service {
 		            			 mGameNameList.add(strArray3[j]);
 		            		 }
 		            		 
-		            		 mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_GAMER_LIST,-1,-1,stringAddressName)
-		            		 	.sendToTarget();
+		            		 /*mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_GAMER_LIST,-1,-1,stringAddressName)
+		            		 	.sendToTarget();*/
 		            	 }
 		            	 break;
 		             case 4://4 represent a message of new gamer's data
@@ -1061,6 +1106,11 @@ public class GameService extends Service {
 	            			 String stringGuess = new String(guess);
 		            		 
 		            		 if(stringTargetAddress2.equals(MyAddress)) { //if this message is for me
+		            			 //sleep 1 second in case I have send out this handler before Palette activity start
+		            			 try {
+		            					Thread.sleep(1000);
+		            			 } catch (InterruptedException e) {}
+		            			 
 		            			 //send this guess and my position in the gamer list to Palette Activity
 		            			 Message msg2 
 		            			 	= mPaletteHandler.obtainMessage(Palette.MESSAGE_GUESS,-1,-1,stringGuess);
@@ -1070,6 +1120,11 @@ public class GameService extends Service {
 		            			 msg2.setData(bundle2);
 		            			 mPaletteHandler.sendMessage(msg2);
 		            		 } else {
+		            			 //sleep 1 second in case I have send out this handler before Palette activity start
+		            			 try {
+		            					Thread.sleep(1000);
+		            			 } catch (InterruptedException e) {}
+		            			 
 		            			 //send this guess and the sender's position in the gamer list to Palette Activity
 		            			 Message msg2 
 		            			 	= mPaletteHandler.obtainMessage(Palette.MESSAGE_ENDGAME,-1,-1,stringGuess);
@@ -1115,34 +1170,73 @@ public class GameService extends Service {
 	            				 System.arraycopy(palette, i*4, XorY, 0, 4);
 	            				 intPalette[i] = byteArrayToInt(XorY);
 	            			 }
+	            			 
+	            			 //Convert int[] to float[] (to print it out)
+	            			 float[] floatPalette = new float[intPalette.length];
+	            			 for(int i=0; i<intPalette.length ; i++) {
+	            				 floatPalette[i] = intPalette[i];
+	            			 }
 		            		 
-		            		 if(stringTargetAddress3.equals(MyAddress)) {//if this message is for me
-		            			 //send this palette and my position in gamer list to Guess Activity
-		            			 Message msg2 = mGuessHandler.obtainMessage(Guess.MESSAGE_PALETTE,-1,-1,intPalette);
-		            			 
-		            			 Bundle bundle2 = new Bundle();
-		            			 bundle2.putInt("MyPosition",MyPosition);
-		            			 msg2.setData(bundle2);
-		            			 mGuessHandler.sendMessage(msg2);
-		            		 } else {
-		            			 //send this palette and sender's position in gamer list to Guess Activity
-		            			 Message msg2 = mGuessHandler.obtainMessage(Guess.MESSAGE_ENDGAME,-1,-1,intPalette);
-		            			 
-		            			 //Find the sender's position in game list
-		            			 int senderPosition = -1;
-		            			 for(int i=0 ; i<mGameAddressList.size() ; i++) {
-		            				 if(stringTargetAddress3.equals(mGameAddressList.get(i)) ) {
-		            					 if(i == 0){
-		            						 senderPosition = mGameAddressList.size() - 1;
-		            					 } else {
-		            						 senderPosition = i - 1;
-		            					 }
+	            			 if(stringTargetAddress3.equals(MyAddress)) {//if this message is for me
+								 //send this palette and sender's position in gamer list to Guess Activity
+		            			 //then Guess will store this palette at EndGame Activity
+		            			 if(GuessAlive) {
+		            				//send this palette and sender's position in gamer list to Guess Activity
+			            		     Message msg2 = mGuessHandler.obtainMessage(Guess.MESSAGE_PALETTE,-1,-1,floatPalette);
+			            			 Bundle bundle2 = new Bundle();
+			            			 bundle2.putInt("MyPosition",MyPosition);
+			            			 msg2.setData(bundle2);
+			            			 mGuessHandler.sendMessage(msg2);
+		            			 } else {
+		            				 tempFloat_PALETTE = new float[floatPalette.length];
+		            				 for(int i=0 ; i<floatPalette.length ; i++) {
+				            				tempFloat_PALETTE[i] = floatPalette[i];
 		            				 }
 		            			 }
-		            			 Bundle bundle2 = new Bundle();
-		            		     bundle2.putInt("senderPosition",senderPosition);
-		            		     msg2.setData(bundle2);
-		            		     mGuessHandler.sendMessage(msg2);
+		            		 } else {
+		            			 //send this palette and sender's position in gamer list to Guess Activity
+		            			 //then Guess will store this palette at EndGame Activity
+		            			 if(GuessAlive) {
+		            				//send this palette and sender's position in gamer list to Guess Activity
+			            			 Message msg2 = mGuessHandler.obtainMessage(Guess.MESSAGE_ENDGAME,-1,-1,floatPalette);
+			            			 
+			            			 //Find the sender's position in game list
+			            			 int senderPosition = -1;
+			            			 for(int i=0 ; i<mGameAddressList.size() ; i++) {
+			            				 if(stringTargetAddress3.equals(mGameAddressList.get(i)) ) {
+			            					 if(i == 0){
+			            						 senderPosition = mGameAddressList.size() - 1;
+			            					 } else {
+			            						 senderPosition = i - 1;
+			            					 }
+			            				 }
+			            			 }
+			            			 Bundle bundle2 = new Bundle();
+			            		     bundle2.putInt("senderPosition",senderPosition);
+			            		     msg2.setData(bundle2);
+			            		     mGuessHandler.sendMessage(msg2);
+			            		} else {
+			            			tempFloat_ENDGAME = new float[floatPalette.length];
+			            			for(int i=0 ; i<floatPalette.length ; i++) {
+			            				tempFloat_ENDGAME[i] = floatPalette[i];
+			            			}
+			            			tempFloatArrayList.add(tempFloat_ENDGAME);
+			            			
+			            			//Find the sender's position in game list
+			            			int senderPosition = -1;
+			            			for(int i=0 ; i<mGameAddressList.size() ; i++) {
+			            				if(stringTargetAddress3.equals(mGameAddressList.get(i)) ) {
+			            					if(i == 0){
+			            						senderPosition = mGameAddressList.size() - 1;
+			            						senderPositionArrayList.add(senderPosition);
+			            					} else {
+			            						senderPosition = i - 1;
+			            						senderPositionArrayList.add(senderPosition);
+			            					}
+			            				}
+			            			}
+			            		}
+		            			 
 		            		 }
 		            	 }
 		            	 break;
@@ -1160,15 +1254,20 @@ public class GameService extends Service {
 		            						 bufferList_0.get(i).length-3);
 		            			 }
 		            			 
-		            			//Convert it to string
+		            			 //Convert it to string
 		            			 String addressList2 = new String(allByte);
-		            			//addressList : "address1,address2 ..."
+		            			 //addressList : "address1,address2 ..."
 				            	 String[] addressArray2 = addressList2.split(",");
 				            	 
-				            	//add the String[] to arraylist<String>
+				            	 //add the String[] to arraylist<String>
 				            	 for(int j=0;j<addressArray2.length;j++)  {
 				            		 mAddressList.add(addressArray2[j]);
 				            	 }
+				            	 
+				            	 //Clear the bufferList
+		            			 while(bufferList_0.size() != 0) {
+		            				 bufferList_0.remove(0);
+		            			 }
 		            		 }
 			            	 break;
 		            	 case 3: //3 represent a message of gamer list
@@ -1239,6 +1338,8 @@ public class GameService extends Service {
 			            				 }
 			            			 }
 			            			 
+			            			 //**Error occurred from here , comment it first
+			            			 /* 
 			            			 //Combine all this buffer's contained coordinate(byte)
 			            			 byte[] allByte = new byte[byteAmount];
 			            			 for(int i=0 ; i<position.size(); i++) {
@@ -1254,53 +1355,133 @@ public class GameService extends Service {
 			            				 intPalette2[i] = byteArrayToInt(XorY);
 			            			 }
 			            			 
+			            			 //Convert int[] to float[] (to print it out)
+			            			 float[] floatPalette2 = new float[intPalette2.length];
+			            			 for(int i=0; i<intPalette2.length ; i++) {
+			            				 floatPalette2[i] = intPalette2[i];
+			            			 }
+			            			 
 			            			 if(stringTarget2.equals(MyAddress)) {//if this message is for me
 			            				 //print this palette out at the Guess Activity
-				            			 mGuessHandler.obtainMessage(Guess.MESSAGE_PALETTE,-1,-1,intPalette2)
-				            			 	.sendToTarget();
+			            				 if(GuessAlive) {
+			            					 Message msg2 = 
+			            							 mGuessHandler.obtainMessage(Guess.MESSAGE_PALETTE,-1,-1,floatPalette2);
+				            			 	 Bundle bundle2 = new Bundle();
+					            			 bundle2.putInt("MyPosition",MyPosition);
+					            			 msg2.setData(bundle2);
+					            			 mGuessHandler.sendMessage(msg2);
+				            			 } else {
+				            			 	tempFloat_PALETTE = new float[floatPalette2.length];
+				            			 	for(int i=0 ; i<floatPalette2.length ; i++) {
+				            			 		tempFloat_PALETTE[i] = floatPalette2[i];
+				            			 	}
+				            			 }
 				            		 } else { 
 				            			 //send this palette and sender's position in gamer list to Guess Activity
 				            			 //then Guess will store this palette at EndGame Activity
-				            			 Message msg2 
-				            			   = mGuessHandler.obtainMessage(Guess.MESSAGE_ENDGAME,-1,-1,intPalette2);
-				            			 
-				            			//Find the sender's position in game list
-				            			 int senderPosition = -1;
-				            			 for(int i=0 ; i<mGameAddressList.size() ; i++) {
-				            				 if(stringTarget2.equals(mGameAddressList.get(i)) ) {
-				            					 if(i == 0){
-				            						 senderPosition = mGameAddressList.size() - 1;
-				            					 } else {
-				            						 senderPosition = i - 1;
-				            					 }
-				            				 }
-				            			 }
-				            			 Bundle bundle2 = new Bundle();
-				            		     bundle2.putInt("senderPosition",senderPosition);
-				            		     msg2.setData(bundle2);
-				            		     mGuessHandler.sendMessage(msg2);
+				            			 if(GuessAlive) {
+				            				 Message msg2 
+					            			   = mGuessHandler.obtainMessage(Guess.MESSAGE_ENDGAME,-1,-1,floatPalette2);
+					            			 
+				            				 //Find the sender's position in game list
+					            			 int senderPosition = -1;
+					            			 for(int i=0 ; i<mGameAddressList.size() ; i++) {
+					            				 if(stringTarget2.equals(mGameAddressList.get(i)) ) {
+					            					 if(i == 0){
+					            						 senderPosition = mGameAddressList.size() - 1;
+					            					 } else {
+					            						 senderPosition = i - 1;
+					            					 }
+					            				 }
+					            			 }
+					            			 Bundle bundle2 = new Bundle();
+					            		     bundle2.putInt("senderPosition",senderPosition);
+					            		     msg2.setData(bundle2);
+					            		     mGuessHandler.sendMessage(msg2);
+					            		} else {
+					            			tempFloat_ENDGAME = new float[floatPalette2.length];
+					            			for(int i=0 ; i<floatPalette2.length ; i++) {
+					            				tempFloat_ENDGAME[i] = floatPalette2[i];
+					            			}
+					            			tempFloatArrayList.add(tempFloat_ENDGAME);
+					            			
+					            			//Find the sender's position in game list
+					            			int senderPosition = -1;
+					            			for(int i=0 ; i<mGameAddressList.size() ; i++) {
+					            				if(stringTarget2.equals(mGameAddressList.get(i)) ) {
+					            					if(i == 0){
+					            						senderPosition = mGameAddressList.size() - 1;
+					            						senderPositionArrayList.add(senderPosition);
+					            					} else {
+					            						senderPosition = i - 1;
+					            						senderPositionArrayList.add(senderPosition);
+					            					}
+					            				}
+					            			}
+					            			
+					            		}
 				            		 }
 			            			 
 			            			 //Clear those used buffer from bufferList
 			            			 for(int i=0 ; i<position.size(); i++) {
 			            				 bufferList_6.remove(position.get(i)-i);
 			            			 }
+			            			 */
 			            		 }
 		            		 }
 		            		 break;
 		            		 
 		            	 }
 		            	 break;
-		             case 8: //8 means this is a "start game" request //**
+		             case 8: //8 means this is a "start game" message //**
 		            	 //buffer = {8 roomID}
-		            	 byte[] roomID6 = new byte[18];
-		            	 System.arraycopy(buffer, 1, roomID6, 0, bytes-1);
-		            	 
-		            	 //Check if this "start game" request is for my game room
+		            	 byte[] roomID6 = new byte[17];
+		            	 System.arraycopy(buffer, 1, roomID6, 0, 17);
 		            	 String stringRoomID2 = new String(roomID6);
+		            	 
+		            	 //delete this game room from the OutSide list because it has started
+	            		 mOutSideHandler.obtainMessage(OutSide.MESSAGE_DELETE_ROOM,-1,-1,stringRoomID2)
+	            		 .sendToTarget();
+		            	 
+		            	 //Check if this message is for my game room
 		            	 if(stringRoomID2.equals(MyRoomID) ) {
 		            		 //send a message to GameRoom to start the game
 		            		 mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_START_GAME).sendToTarget();
+		            	 }
+		            	 break;
+		             case 9://9 means this is a "dismiss game room" message //**
+		            	 //buffer = {9 roomID}
+		            	 byte[] roomID7 = new byte[17];
+		            	 System.arraycopy(buffer, 1, roomID7, 0, 17);
+		            	 String stringRoomID6 = new String(roomID7);
+		            	 
+		            	 //delete this game room from the OutSide list because it has dismissed
+	            		 mOutSideHandler.obtainMessage(OutSide.MESSAGE_DELETE_ROOM,-1,-1,stringRoomID6)
+	            		 .sendToTarget();
+	            		 
+	            		 //Check whether this message is for my game room
+		            	 if(stringRoomID6.equals(MyRoomID) ) {
+		            		 //send a message to GameRoom to quit
+		            		 mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_DISMISS_GAME).sendToTarget();
+		            	 }
+		            	 break;
+		             case 10://10 means this is a "leave game room" message
+		            	 //buffer = {10 roomID MyAddress}
+		            	 byte[] roomID8 = new byte[17];
+		            	 System.arraycopy(buffer, 1, roomID8, 0, 17);
+		            	 String stringRoomID7 = new String(roomID8);
+		            	 
+		            	 //send a message to OutSide to -1 exist population to this game rooom
+		            	 mOutSideHandler.obtainMessage(OutSide.MESSAGE_LEAVE_ROOM,-1,-1,stringRoomID7).sendToTarget();
+		            	 
+		            	 //Check whether this message is for my game room
+		            	 if(stringRoomID7.equals(MyRoomID) ) {
+		            		 byte[] checkAddress = new byte[17];
+		            		 System.arraycopy(buffer, 18, checkAddress, 0, 17);
+		            		 String stringCheckAddress = new String(checkAddress);
+		            		 
+		            		 mGameRoomHandler.obtainMessage(GameRoom.MESSAGE_GAMER_OUT,-1,-1,stringCheckAddress)
+		            		 .sendToTarget();
 		            	 }
 		            	 break;
 		             }
@@ -1429,6 +1610,9 @@ public class GameService extends Service {
 	}
 	
 	public static void getGameRoomHandler(Handler handler) {
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {}
 		mGameRoomHandler = handler;
 		
 		if(mGameAddressList.size() > 0) {
@@ -1445,6 +1629,26 @@ public class GameService extends Service {
 	
 	public static void getGuessHandler(Handler handler) {
 		mGuessHandler = handler;
+		
+		GuessAlive = true;
+		if(tempFloat_PALETTE.length> 0) {
+			Message msg2 = 
+					 mGuessHandler.obtainMessage(Guess.MESSAGE_PALETTE,-1,-1,tempFloat_PALETTE);
+		 	 Bundle bundle2 = new Bundle();
+			 bundle2.putInt("MyPosition",MyPosition);
+			 msg2.setData(bundle2);
+			 mGuessHandler.sendMessage(msg2);
+		} else if(tempFloat_ENDGAME.length > 0) {
+			for(int i=0 ; i<tempFloatArrayList.size() ; i++) {
+				Message msg2 
+ 			   		= mGuessHandler.obtainMessage(Guess.MESSAGE_ENDGAME,-1,-1,tempFloatArrayList.get(i));
+				Bundle bundle2 = new Bundle();
+				bundle2.putInt("senderPosition",senderPositionArrayList.get(i));
+				msg2.setData(bundle2);
+				mGuessHandler.sendMessage(msg2);
+			}
+		}
+		
 	}
 	
 	public static void getPaletteHandler(Handler handler) {

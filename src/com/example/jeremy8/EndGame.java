@@ -81,24 +81,13 @@ public class EndGame extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 	
-	public void time()
-	{
-		
-	}
 	
-	public boolean onKeyDown(int keyCode, KeyEvent event) {//捕捉返回鍵
-        if ((keyCode == KeyEvent.KEYCODE_BACK)) {   
-        	Toast.makeText(this, "Leave program.", Toast.LENGTH_SHORT).show();
-        	
-            return true;   
-        }   
-        return super.onKeyDown(keyCode, event);   
-    }
 
 	protected void onStop(){
 		super.onStop();
 		File dir = getFilesDir();
 		File file = new File(dir,"temp.json");
 		file.delete();
+		EndGame.this.finish();
 	}
 }

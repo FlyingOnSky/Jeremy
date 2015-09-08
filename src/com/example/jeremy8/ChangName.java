@@ -54,6 +54,11 @@ public class ChangName extends Activity {
 					.putString("name",edtname.getText().toString())//儲存現在資料
 					.commit();	
 				}
+				
+				//Update this name to GameService
+				Intent intent = new Intent(GameService.ACTION_CHANGE_NAME);
+				startService(intent);
+				
 				//轉換頁面
 				Intent intent1=new Intent();
 				intent1.setClass(ChangName.this,SelfSpace.class);

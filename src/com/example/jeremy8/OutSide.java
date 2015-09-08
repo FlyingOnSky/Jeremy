@@ -48,6 +48,8 @@ public class OutSide extends Activity {
     
     public static final int MESSAGE_NEW_ROOM = 0;
     public static final int MESSAGE_JOIN_ROOM = 1;
+    public static final int MESSAGE_LEAVE_ROOM = 2;
+    public static final int MESSAGE_DELETE_ROOM = 3;
 	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -144,7 +146,7 @@ public class OutSide extends Activity {
 			//設定元件內容
 			txtRoomname.setText(roomName.get(position));
 			txtPopulation.setText(population.get(position));
-			txtnowPopulation.setText("0");
+			txtnowPopulation.setText(nowpopulation.get(position)+" / ");
 			
 			return convertView;
 		}
@@ -167,7 +169,6 @@ public class OutSide extends Activity {
 			
 			Intent intent = new Intent(GameService.ACTION_JOIN_ROOM);
 			intent.putExtra("roomID",roomID.get(position));
-			//**intent.putExtra("roomMaxPopulation", Integer.valueOf(population.get(position)));
 			startService(intent);
 			
 			//轉換頁面
@@ -234,11 +235,11 @@ public class OutSide extends Activity {
 				*/
 				
 			    //新加的
-				Toast.makeText(getApplicationContext(),msg.getData().getString("roomName"),Toast.LENGTH_SHORT).show();
 				
 				roomID.add( msg.getData().getString("roomID"));
 				roomName.add(msg.getData().getString("roomName"));
 				population.add(msg.getData().getString("population"));
+				nowpopulation.add("1");
 				
 				MyAdapter adapter=new MyAdapter(OutSide.this);
 				lstPrefer.setAdapter(adapter);
@@ -266,14 +267,30 @@ public class OutSide extends Activity {
 						nowpopulation.set(i,String.valueOf(n));
 					}
 				}
-				/*int i=0;
-				do{
-					if(roomID2temp.equals(roomID.get(i)) ){
-						int n=Integer.parseInt(nowpopulation.get(i))+1;
+				break;
+			case MESSAGE_LEAVE_ROOM://Some one quit the game room
+				String roomID3temp =(String) msg.obj;
+				
+				//Check which room this is and -1 to its exist population
+				for(int i=0 ; i<roomID.size(); i++) {
+					if(roomID3temp.equals(roomID.get(i)) ){
+						int n=Integer.parseInt(nowpopulation.get(i))-1;
 						nowpopulation.set(i,String.valueOf(n));
 					}
-					i+=1;
-				}while(!roomID2temp.equals(roomID.get(i)) );*/
+				}
+				break;
+			case MESSAGE_DELETE_ROOM://A founder has delete his game room
+				String roomID4temp =(String) msg.obj;
+				
+				//Check which room this is and delete it
+				for(int i=0 ; i<roomID.size(); i++) {
+					if(roomID4temp.equals(roomID.get(i)) ){
+						roomID.remove(i);
+						roomName.remove(i);
+						population.remove(i);
+					}
+				}
+				break;
 			}
 		}
 	};

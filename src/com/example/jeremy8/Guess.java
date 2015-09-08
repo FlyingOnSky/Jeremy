@@ -40,7 +40,7 @@ public class Guess extends Activity {
 	private Bitmap baseBitmap;
 	private Canvas canvas;
 	private Paint paint;
-	private float[] MyPalette={10,10,20,20};  // <--------------- 接收資料存放處
+	private float[] MyPalette;  // <--------------- 接收資料存放處
 	private int MyPosition;
 	private float[] senderPalette;
 	private int senderPosition;
@@ -50,21 +50,21 @@ public class Guess extends Activity {
 	
 	public static final int MESSAGE_PALETTE = 0;
 	public static final int MESSAGE_ENDGAME = 1;
+	public static final int MESSAGE_TEST = 2; //**
 	//
-	
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_guess);
 		
 		//Deliver this Activity's handler to service , so service can update this activity
-		//**GameService.getGuessHandler(mGuessHandler);
+		GameService.getGuessHandler(mGuessHandler);
 		
 		Intent intent1=this.getIntent();
 		Bundle bundle1=intent1.getExtras();
 		i=bundle1.getInt("round");
 		self=bundle1.getInt("self");
-		
+
 		
 		//取得介面元件
 		edtguess=(EditText)findViewById(R.id.editText6);
@@ -91,9 +91,7 @@ public class Guess extends Activity {
 		// 先将灰色背景画上
 		canvas.drawBitmap(baseBitmap, new Matrix(), paint);
 		iv.setImageBitmap(baseBitmap);
-		
-		
-		canvas.drawLines(MyPalette,0,MyPalette.length, paint); 
+		 
 		
 		int ini=self-i+1;  //引入self
 		if(ini < 1)
@@ -129,8 +127,7 @@ public class Guess extends Activity {
 		/*		preference.edit().remove("guess");
 		   	    preference.edit()
 				.putString("data",edtguess.getText().toString())
-				.commit();
-		*/
+				.commit();*/
 		/*		try{
 				//----------- title ----------
 					writer.value(edtguess.getText().toString());  // <----- 改成題目變數
@@ -207,10 +204,17 @@ public class Guess extends Activity {
 				//print this palette out and store it at EndGame Activity
 				MyPalette =(float[]) msg.obj;
 				MyPosition = msg.getData().getInt("MyPosition");
+				//**Toast.makeText(getApplicationContext(), "Length:"+MyPalette.length, Toast.LENGTH_SHORT).show();
+				//**Toast.makeText(getApplicationContext(), "1:"+MyPalette[0]+",2:"+MyPalette[1], Toast.LENGTH_SHORT).show();
+				
+				
+				
+				
+				canvas.drawLines(MyPalette,0,MyPalette.length, paint);
 				int ini3=MyPosition-i+1;
 				if(ini3 < 1)
 					ini3 += MAX;
-				try{
+				/*try{
 					FileOutputStream tempf = openFileOutput("temp.json", MODE_WORLD_READABLE);
 					  JsonWriter temp = new JsonWriter(new OutputStreamWriter(tempf, "UTF-8"));
 					temp.setIndent("  ");
@@ -230,11 +234,9 @@ public class Guess extends Activity {
 					temp.close();
 					
 				}catch(Exception e) {
-					  Log.e("log_tag", "Error saving string "+e.toString());
-				  }
-
-				
-				
+					Log.e("log_tag", "Error saving string "+e.toString());
+				}
+				*/
 				break;
 			case MESSAGE_ENDGAME:
 				//store this palette at EndGame Activity
@@ -243,7 +245,7 @@ public class Guess extends Activity {
 				int ini2 = senderPosition-i+2;
 				if(ini2 < 1)
 					ini2 += MAX;
-				try{
+				/*try{
 					FileOutputStream tempf = openFileOutput("temp.json", MODE_WORLD_READABLE);
 					  JsonWriter temp = new JsonWriter(new OutputStreamWriter(tempf, "UTF-8"));
 					temp.setIndent("  ");
@@ -263,8 +265,32 @@ public class Guess extends Activity {
 					temp.close();
 					
 				}catch(Exception e) {
-					  Log.e("log_tag", "Error saving string "+e.toString());
-				  }
+					Log.e("log_tag", "Error saving string "+e.toString());
+				}
+				*/
+				break;
+			case MESSAGE_TEST: //**
+				byte[] a =(byte[]) msg.obj;
+				//Extract the coordinate it contained
+       		 	byte[] palette = new byte[a.length-35];
+       		 	System.arraycopy(a,35,palette,0,a.length-35);
+   			 
+       		 	//Convert byte[] to int[]
+       		 	int[] intPalette = new int[palette.length / 4];
+       		 	for(int i=0 ; i<palette.length / 4; i++) {
+       		 		byte[] XorY = new byte[4];
+       		 		System.arraycopy(palette, i*4, XorY, 0, 4);
+       		 		intPalette[i] = byteArrayToInt(XorY);
+       		 	}
+   			 
+       		 	//Convert int[] to float[] (to print it out)
+       		 	float[] floatPalette = new float[intPalette.length];
+       		 	for(int i=0; i<intPalette.length ; i++) {
+       		 		floatPalette[i] = intPalette[i];
+       		 	}
+       		 	
+       		 	canvas.drawLines(floatPalette,0,floatPalette.length, paint);
+				break;
 
 			}
 		}
@@ -277,5 +303,10 @@ public class Guess extends Activity {
         }   
         return super.onKeyDown(keyCode, event);   
     }
+	
+	public static int byteArrayToInt(byte[] b) //**
+	{
+	    return (b[3] & 0xFF) + ((b[2] & 0xFF) << 8) + ((b[1] & 0xFF) << 16) + ((b[0] & 0xFF) << 24);
+	}
 }
 

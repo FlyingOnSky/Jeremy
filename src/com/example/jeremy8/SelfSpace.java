@@ -30,14 +30,9 @@ import android.widget.Toast;
 
 public class SelfSpace extends Activity {
 	private ListView lstPrefer;
-	private int[] rexIds=new int[]{R.drawable.pictitle01,R.drawable.pictitle02,
-			R.drawable.pictitle03,R.drawable.pictitle01,R.drawable.pictitle02,
-			R.drawable.pictitle03,R.drawable.pictitle01,R.drawable.pictitle02,
-			R.drawable.pictitle03};
-	private String[] roomName=new String[]{"Animal","Human","Food","Animal",
-			"Human","Food","Animal","Human","Food"};
-	private String[] ans=new String[]{"giraffe","hero","rice","giraffe",
-			"hero","rice","giraffe","hero","rice"};
+	private int[] rexIds=new int[]{};
+	private String[] roomName=new String[]{};
+	private String[] ans=new String[]{};
 	private Button btnoutside,btnname;
 	private SharedPreferences preference;
 	private String readname;
@@ -47,10 +42,11 @@ public class SelfSpace extends Activity {
     // Intent request codes
     private static final int REQUEST_ENABLE_BT = 1;
     
-    public static final int MESSAGE_DEVICE_NAME = 0; //**
+    public static final int MESSAGE_DEVICE_NAME = 0;
     public static final int MESSAGE_PRINT = 1; //**
     public static final int MESSAGE_OK = 2;
     public static final int MESSAGE_INT = 3;
+    public static final int MESSAGE_STRING = 4; //**
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -298,6 +294,10 @@ public class SelfSpace extends Activity {
 					break;
 				case MESSAGE_INT:
 					Toast.makeText(getApplicationContext(),""+msg.arg1,Toast.LENGTH_SHORT).show();
+					break;
+				case MESSAGE_STRING:
+					String s = (String) msg.obj;
+					Toast.makeText(getApplicationContext(),s,Toast.LENGTH_SHORT).show();
 					break;
 				}
 			}

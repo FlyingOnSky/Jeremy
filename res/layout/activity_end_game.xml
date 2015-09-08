@@ -7,7 +7,7 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.example.jeremy8.GameRoom" >
+    tools:context="com.example.jeremy8.EndGame" >
 
     <TextView
         android:id="@+id/textView14"
@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:text=""
+        android:text="Thanks for playing."
         android:textAppearance="?android:attr/textAppearanceMedium" />
      <ListView
         android:id="@+id/listView5"
